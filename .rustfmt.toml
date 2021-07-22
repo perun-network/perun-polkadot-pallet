@@ -1,0 +1,6 @@
+# Consider looking at the substrate style guide before changing anything here.
+# <https://github.com/paritytech/substrate/blob/master/docs/STYLE_GUIDE.md>
+
+hard_tabs = true
+tab_spaces = 4
+max_width = 100

@@ -1,0 +1,6 @@
+.assets/*
+.git/*
+.github/*
+target/*
+Dockerfile
+README.md
