@@ -348,12 +348,9 @@ pub mod pallet {
 		/// a finalized state is provided and signed by all participants.
 		///
 		/// Emits an [Event::Concluded] event on success.
-		pub fn conclude_dispute(
-			origin: OriginFor<T>,
-			params: ParamsOf<T>,
-			channel_id: ChannelIdOf<T>,
-		) -> DispatchResult {
+		pub fn conclude_dispute(origin: OriginFor<T>, params: ParamsOf<T>) -> DispatchResult {
 			ensure_signed(origin)?;
+			let channel_id = params.channel_id::<T::Hasher>();
 
 			match <StateRegister<T>>::get(&channel_id) {
 				Some(dispute) => {

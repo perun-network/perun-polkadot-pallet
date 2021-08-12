@@ -186,14 +186,37 @@ fn conclude_f_insufficient_deposits() {
 fn conclude_d_unknown() {
 	run_test(|setup| {
 		assert_noop!(
-			Perun::conclude_dispute(
-				Origin::signed(setup.ids.alice),
-				Default::default(),
-				Default::default()
-			),
+			Perun::conclude_dispute(Origin::signed(setup.ids.alice), Default::default()),
 			pallet_perun::Error::<Test>::UnknownDispute
 		);
 		assert_no_events();
+	});
+}
+
+#[test]
+fn conclude_d_wrong_params() {
+	run_test(|setup| {
+		//Fund the channel.
+		assert_ok!(Perun::deposit(
+			Origin::signed(setup.ids.alice),
+			setup.fids.alice,
+			setup.state.balances[0]
+		));
+		assert_ok!(Perun::deposit(
+			Origin::signed(setup.ids.bob),
+			setup.fids.bob,
+			setup.state.balances[1]
+		));
+
+		call_dispute(&setup, false);
+
+		let mut params = setup.params.clone();
+		// Change the participants by reversing them.
+		params.participants.reverse();
+		assert_noop!(
+			Perun::conclude_dispute(Origin::signed(setup.ids.alice), params),
+			pallet_perun::Error::<Test>::UnknownDispute
+		);
 	});
 }
 
@@ -203,11 +226,7 @@ fn conclude_d_too_early() {
 		call_dispute(setup, false);
 
 		assert_noop!(
-			Perun::conclude_dispute(
-				Origin::signed(setup.ids.alice),
-				setup.params.clone(),
-				setup.cid
-			),
+			Perun::conclude_dispute(Origin::signed(setup.ids.alice), setup.params.clone()),
 			pallet_perun::Error::<Test>::ConcludedTooEarly
 		);
 		assert_num_event(1);
@@ -234,8 +253,7 @@ fn conclude_d_after_timeout() {
 
 		assert_ok!(Perun::conclude_dispute(
 			Origin::signed(setup.ids.alice),
-			setup.params.clone(),
-			setup.cid
+			setup.params.clone()
 		));
 		event_concluded(setup.cid);
 	});
@@ -270,11 +288,7 @@ fn conclude_already_concluded() {
 		);
 
 		assert_noop!(
-			Perun::conclude_dispute(
-				Origin::signed(setup.ids.alice),
-				setup.params.clone(),
-				state.channel_id,
-			),
+			Perun::conclude_dispute(Origin::signed(setup.ids.alice), setup.params.clone()),
 			pallet_perun::Error::<Test>::AlreadyConcluded
 		);
 	});

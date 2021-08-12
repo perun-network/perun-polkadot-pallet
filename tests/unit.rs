@@ -111,7 +111,7 @@ fn unsigned_tx() {
 	});
 	run_test(|_| {
 		assert_noop!(
-			Perun::conclude_dispute(Origin::none(), Default::default(), Default::default()),
+			Perun::conclude_dispute(Origin::none(), Default::default()),
 			BadOrigin
 		);
 	});
