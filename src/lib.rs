@@ -442,8 +442,7 @@ impl<T: Config> Pallet<T> {
 
 	/// Calculates the funding id of a participant in a channel.
 	pub fn calc_funding_id(channel: ChannelIdOf<T>, part: &PkOf<T>) -> FundingIdOf<T> {
-		let encoded = [Encode::encode(&channel), Encode::encode(&part)].concat();
-		<HasherOf<T> as sp_core::Hasher>::hash(&encoded)
+		Funding { channel, part }.id::<HasherOf<T>>()
 	}
 
 	/// Pushes the outcome of a channel back into the `Deposits` map.
