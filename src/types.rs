@@ -144,7 +144,7 @@ where
 {
 	/// Calculates the Channel ID of the Params.
 	pub fn channel_id<T: Hasher>(&self) -> T::Out {
-		let encoded = Encode::encode(&self.encode());
+		let encoded = Encode::encode(&self);
 		T::hash(&encoded)
 	}
 }
