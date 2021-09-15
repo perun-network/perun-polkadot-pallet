@@ -187,10 +187,6 @@ pub mod pallet {
 		UnknownDispute,
 	}
 
-	#[pallet::hooks]
-	/// Hooks of the Pallet.
-	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
-
 	#[pallet::call]
 	/// Contains all user-facing functions.
 	impl<T: Config> Pallet<T> {

@@ -28,7 +28,7 @@ use sp_core::{crypto::*, H256};
 pub fn event_deposited(funding_id: H256, amount: u64) {
 	assert_eq!(
 		last_event(),
-		Event::pallet_perun(pallet_perun::Event::Deposited(funding_id, amount))
+		Event::Perun(pallet_perun::Event::Deposited(funding_id, amount))
 	);
 }
 
@@ -36,7 +36,7 @@ pub fn event_deposited(funding_id: H256, amount: u64) {
 pub fn event_disputed(channel_id: ChannelIdOf<Test>, state: StateOf<Test>) {
 	assert_eq!(
 		last_event(),
-		Event::pallet_perun(pallet_perun::Event::Disputed(channel_id, state))
+		Event::Perun(pallet_perun::Event::Disputed(channel_id, state))
 	);
 }
 
@@ -44,7 +44,7 @@ pub fn event_disputed(channel_id: ChannelIdOf<Test>, state: StateOf<Test>) {
 pub fn event_concluded(channel_id: ChannelIdOf<Test>) {
 	assert_eq!(
 		last_event(),
-		Event::pallet_perun(pallet_perun::Event::Concluded(channel_id))
+		Event::Perun(pallet_perun::Event::Concluded(channel_id))
 	);
 }
 
@@ -52,7 +52,7 @@ pub fn event_concluded(channel_id: ChannelIdOf<Test>) {
 pub fn event_withdrawn(funding_id: FundingIdOf<Test>) {
 	assert_eq!(
 		last_event(),
-		Event::pallet_perun(pallet_perun::Event::Withdrawn(funding_id))
+		Event::Perun(pallet_perun::Event::Withdrawn(funding_id))
 	);
 }
 
