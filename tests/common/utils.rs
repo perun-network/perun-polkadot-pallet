@@ -109,7 +109,6 @@ pub fn sign_state(state: &StateOf<Test>, setup: &Setup) -> Vec<SigOf<Test>> {
 	let raw = Encode::encode(&state);
 	let sig_alice = setup.keys.alice.sign(&raw);
 	let sig_bob = setup.keys.bob.sign(&raw);
-	// Dora tries to call deposit with just one signature.
 	vec![sig_alice, sig_bob]
 }
 
@@ -118,6 +117,5 @@ pub fn sign_withdrawal(withdrawal: &WithdrawalOf<Test>, setup: &Setup) -> Vec<Si
 	let raw = Encode::encode(&withdrawal);
 	let sig_alice = setup.keys.alice.sign(&raw);
 	let sig_bob = setup.keys.bob.sign(&raw);
-	// Dora tries to call deposit with just one signature.
 	vec![sig_alice, sig_bob]
 }

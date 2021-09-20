@@ -37,7 +37,7 @@ pub type HasherOf<T> = <T as pallet::Config>::Hasher;
 pub type PkOf<T> = <T as pallet::Config>::PK;
 pub type SigOf<T> = <T as pallet::Config>::Signature;
 
-pub type ParamsOf<T> = Params<NonceOf<T>, <T as pallet::Config>::PK, SecondsOf<T>>;
+pub type ParamsOf<T> = Params<NonceOf<T>, PkOf<T>, SecondsOf<T>>;
 pub type StateOf<T> = State<ChannelIdOf<T>, VersionOf<T>, BalanceOf<T>>;
 pub type RegisteredStateOf<T> = RegisteredState<StateOf<T>, SecondsOf<T>>;
 pub type WithdrawalOf<T> = Withdrawal<ChannelIdOf<T>, PkOf<T>, AccountIdOf<T>>;
@@ -73,7 +73,7 @@ pub struct State<ChannelId, Version, Balance> {
 	/// Version of the state.
 	///
 	/// Higher version values can override states with lower versions.
-	/// An honest participant will never sign two state with the same version.
+	/// An honest participant will never sign two states with the same version.
 	pub version: Version,
 
 	/// Balance distribution per participants.
@@ -106,7 +106,7 @@ pub struct RegisteredState<State, Seconds> {
 
 	/// Set iff a channel is concluded.
 	///
-	/// This means that no other function that [Pallet::withdraw] can be
+	/// This means that no other function than [Pallet::withdraw] can be
 	/// called on the channel.
 	pub concluded: bool,
 }
