@@ -135,7 +135,7 @@ pub mod pallet {
 	}
 
 	#[pallet::error]
-	/// All errors that can be returned by the Pallet function.
+	/// All errors that can be returned by Pallet functions.
 	pub enum Error<T> {
 		/// Deposit was less than the configured `MinDeposit`.
 		DepositTooSmall,
