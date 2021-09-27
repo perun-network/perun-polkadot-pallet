@@ -135,7 +135,7 @@ pub mod pallet {
 	}
 
 	#[pallet::error]
-	/// All errors that can be returned by the Pallet function.
+	/// All errors that can be returned by Pallet functions.
 	pub enum Error<T> {
 		/// Deposit was less than the configured `MinDeposit`.
 		DepositTooSmall,
@@ -186,10 +186,6 @@ pub mod pallet {
 		/// The referenced dispute could not be found.
 		UnknownDispute,
 	}
-
-	#[pallet::hooks]
-	/// Hooks of the Pallet.
-	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
 
 	#[pallet::call]
 	/// Contains all user-facing functions.
@@ -442,8 +438,7 @@ impl<T: Config> Pallet<T> {
 
 	/// Calculates the funding id of a participant in a channel.
 	pub fn calc_funding_id(channel: ChannelIdOf<T>, part: &PkOf<T>) -> FundingIdOf<T> {
-		let encoded = [Encode::encode(&channel), Encode::encode(&part)].concat();
-		<HasherOf<T> as sp_core::Hasher>::hash(&encoded)
+		Funding { channel, part }.id::<HasherOf<T>>()
 	}
 
 	/// Pushes the outcome of a channel back into the `Deposits` map.

@@ -44,21 +44,20 @@ frame_support::construct_runtime!(
 
 parameter_types! {
 	pub const BlockHashCount: u64 = 250;
-	pub BlockWeights: frame_system::limits::BlockWeights =
-		frame_system::limits::BlockWeights::simple_max(1024);
+	pub const SS58Prefix: u8 = 42;
 }
+
 impl frame_system::Config for Test {
-	type BaseCallFilter = ();
+	type BaseCallFilter = frame_support::traits::Everything;
 	type BlockWeights = ();
 	type BlockLength = ();
 	type DbWeight = ();
 	type Origin = Origin;
+	type Call = Call;
 	type Index = u64;
 	type BlockNumber = u64;
 	type Hash = H256;
-	type Call = Call;
 	type Hashing = BlakeTwo256;
-	// Use u64 as AccountId for mocked on-chain signatures.
 	type AccountId = u64;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type Header = Header;
@@ -70,7 +69,7 @@ impl frame_system::Config for Test {
 	type OnNewAccount = ();
 	type OnKilledAccount = ();
 	type SystemWeightInfo = ();
-	type SS58Prefix = ();
+	type SS58Prefix = SS58Prefix;
 	type OnSetCode = ();
 }
 
@@ -79,6 +78,8 @@ parameter_types! {
 }
 impl pallet_balances::Config for Test {
 	type MaxLocks = ();
+	type MaxReserves = ();
+	type ReserveIdentifier = [u8; 8];
 	type Balance = u64;
 	type DustRemoval = ();
 	type Event = Event;
@@ -192,8 +193,8 @@ pub fn run_test(test: fn(&Setup) -> ()) {
 	let setup = new_setup();
 	let mut ext: sp_io::TestExternalities = GenesisConfig {
 		// We use default for brevity, but you can configure as desired if needed.
-		frame_system: Default::default(),
-		pallet_balances: pallet_balances::GenesisConfig::<Test> {
+		system: Default::default(),
+		balances: pallet_balances::GenesisConfig::<Test> {
 			balances: vec![
 				(setup.ids.alice, 100),
 				(setup.ids.bob, 100),

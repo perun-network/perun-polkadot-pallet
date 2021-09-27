@@ -37,10 +37,11 @@ pub type HasherOf<T> = <T as pallet::Config>::Hasher;
 pub type PkOf<T> = <T as pallet::Config>::PK;
 pub type SigOf<T> = <T as pallet::Config>::Signature;
 
-pub type ParamsOf<T> = Params<NonceOf<T>, <T as pallet::Config>::PK, SecondsOf<T>>;
+pub type ParamsOf<T> = Params<NonceOf<T>, PkOf<T>, SecondsOf<T>>;
 pub type StateOf<T> = State<ChannelIdOf<T>, VersionOf<T>, BalanceOf<T>>;
 pub type RegisteredStateOf<T> = RegisteredState<StateOf<T>, SecondsOf<T>>;
 pub type WithdrawalOf<T> = Withdrawal<ChannelIdOf<T>, PkOf<T>, AccountIdOf<T>>;
+pub type FundingOf<T> = Funding<ChannelIdOf<T>, PkOf<T>>;
 
 #[derive(Encode, Decode, Default, Clone, PartialEq, RuntimeDebug)]
 #[codec(dumb_trait_bound)]
@@ -72,7 +73,7 @@ pub struct State<ChannelId, Version, Balance> {
 	/// Version of the state.
 	///
 	/// Higher version values can override states with lower versions.
-	/// An honest participant will never sign two state with the same version.
+	/// An honest participant will never sign two states with the same version.
 	pub version: Version,
 
 	/// Balance distribution per participants.
@@ -105,7 +106,7 @@ pub struct RegisteredState<State, Seconds> {
 
 	/// Set iff a channel is concluded.
 	///
-	/// This means that no other function that [Pallet::withdraw] can be
+	/// This means that no other function than [Pallet::withdraw] can be
 	/// called on the channel.
 	pub concluded: bool,
 }
@@ -129,13 +130,21 @@ pub struct Withdrawal<ChannelId, PK, AccountId> {
 	pub receiver: AccountId,
 }
 
+#[derive(Encode, Decode, Default, Copy, Clone, PartialEq, RuntimeDebug)]
+#[codec(dumb_trait_bound)]
+/// Funding is exclusively used to calculate funding ids via [Funding::id].
+pub struct Funding<ChannelId, PK> {
+	pub channel: ChannelId,
+	pub part: PK,
+}
+
 impl<Nonce, PK, Seconds> Params<Nonce, PK, Seconds>
 where
 	Params<Nonce, PK, Seconds>: Encode,
 {
 	/// Calculates the Channel ID of the Params.
 	pub fn channel_id<T: Hasher>(&self) -> T::Out {
-		let encoded = Encode::encode(&self.encode());
+		let encoded = Encode::encode(&self);
 		T::hash(&encoded)
 	}
 }
@@ -166,5 +175,16 @@ where
 	pub fn validate_sig<Sig: Verify<Signer = Pk>>(&self, sig: &Sig) -> bool {
 		let msg = Encode::encode(&self);
 		sig.verify(&*msg, &self.part)
+	}
+}
+
+impl<ChannelId, PK> Funding<ChannelId, PK>
+where
+	Funding<ChannelId, PK>: Encode,
+{
+	/// Calculates the funding id of a participant in a channel.
+	pub fn id<H: Hasher>(&self) -> H::Out {
+		let encoded = Encode::encode(&self);
+		H::hash(&encoded)
 	}
 }
