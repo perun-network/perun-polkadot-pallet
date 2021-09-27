@@ -20,7 +20,7 @@ use frame_support::{assert_noop, assert_ok};
 use pallet_perun::types::NonceOf;
 
 #[test]
-fn conclude_f_ok() {
+fn conclude_ok() {
 	run_test(|setup| {
 		let mut state = setup.state.clone();
 		state.finalized = true;
@@ -39,23 +39,7 @@ fn conclude_f_ok() {
 }
 
 #[test]
-fn conclude_f_not_final() {
-	run_test(|setup| {
-		assert_noop!(
-			Perun::conclude(
-				Origin::signed(setup.ids.alice),
-				Default::default(),
-				Default::default(),
-				Default::default()
-			),
-			pallet_perun::Error::<Test>::StateNotFinal
-		);
-		assert_no_events();
-	});
-}
-
-#[test]
-fn conclude_f_invalid_sig_nums() {
+fn conclude_invalid_sig_nums() {
 	run_test(|setup| {
 		let mut state = setup.state.clone();
 		state.finalized = true;
@@ -81,7 +65,7 @@ fn conclude_f_invalid_sig_nums() {
 }
 
 #[test]
-fn conclude_f_invalid_sig() {
+fn conclude_invalid_sig() {
 	run_test(|setup| {
 		let mut state = setup.state.clone();
 		let sigs_bad = sign_state(&state, &setup);
@@ -110,7 +94,7 @@ fn conclude_f_invalid_sig() {
 }
 
 #[test]
-fn conclude_f_invalid_channel_id() {
+fn conclude_invalid_channel_id() {
 	run_test(|setup| {
 		let mut state = setup.state.clone();
 		state.finalized = true;
@@ -120,7 +104,7 @@ fn conclude_f_invalid_channel_id() {
 
 		// Different nonce
 		assert_noop!(
-			Perun::conclude(Origin::signed(setup.ids.carl), params, state.clone(), sigs,),
+			Perun::conclude(Origin::signed(setup.ids.carl), params, state.clone(), sigs),
 			pallet_perun::Error::<Test>::InvalidChannelId
 		);
 		assert_no_events();
@@ -128,43 +112,50 @@ fn conclude_f_invalid_channel_id() {
 }
 
 #[test]
-fn conclude_f_while_dispute() {
+fn conclude_dispute() {
 	run_test(|setup| {
+		deposit_both(&setup);
 		call_dispute(&setup, false);
 		let mut state = setup.state.clone();
 		state.finalized = true;
-
 		let sigs = sign_state(&state, &setup);
+
+		assert_ok!(Perun::conclude(
+			Origin::signed(setup.ids.alice),
+			setup.params.clone(),
+			state.clone(),
+			sigs
+		));
+		event_concluded(state.channel_id);
+	});
+}
+
+#[test]
+fn conclude_too_early() {
+	run_test(|setup| {
+		call_dispute(&setup, false);
+		let sigs = sign_state(&setup.state, &setup);
+
 		assert_noop!(
 			Perun::conclude(
 				Origin::signed(setup.ids.alice),
 				setup.params.clone(),
-				state.clone(),
+				setup.state.clone(),
 				sigs
 			),
-			pallet_perun::Error::<Test>::DisputeActive
+			pallet_perun::Error::<Test>::ConcludedTooEarly
 		);
-		assert_num_event(1);
 	});
 }
 
 #[test]
 /// The participants try to withdraw more funds than they deposited.
-fn conclude_f_insufficient_deposits() {
+fn conclude_insufficient_deposits() {
 	run_test(|setup| {
 		let mut state = setup.state.clone();
 		state.finalized = true;
 		// Alice and Bob deposit.
-		assert_ok!(Perun::deposit(
-			Origin::signed(setup.ids.alice),
-			setup.fids.alice,
-			state.balances[0]
-		));
-		assert_ok!(Perun::deposit(
-			Origin::signed(setup.ids.bob),
-			setup.fids.bob,
-			state.balances[1]
-		));
+		deposit_both(&setup);
 
 		// Alice will try to withdraw 1 too much.
 		state.balances[0] += 1;
@@ -178,118 +169,6 @@ fn conclude_f_insufficient_deposits() {
 				sigs
 			),
 			pallet_perun::Error::<Test>::InsufficientDeposits
-		);
-	});
-}
-
-#[test]
-fn conclude_d_unknown() {
-	run_test(|setup| {
-		assert_noop!(
-			Perun::conclude_dispute(Origin::signed(setup.ids.alice), Default::default()),
-			pallet_perun::Error::<Test>::UnknownDispute
-		);
-		assert_no_events();
-	});
-}
-
-#[test]
-fn conclude_d_wrong_params() {
-	run_test(|setup| {
-		//Fund the channel.
-		assert_ok!(Perun::deposit(
-			Origin::signed(setup.ids.alice),
-			setup.fids.alice,
-			setup.state.balances[0]
-		));
-		assert_ok!(Perun::deposit(
-			Origin::signed(setup.ids.bob),
-			setup.fids.bob,
-			setup.state.balances[1]
-		));
-
-		call_dispute(&setup, false);
-
-		let mut params = setup.params.clone();
-		// Change the participants by reversing them.
-		params.participants.reverse();
-		assert_noop!(
-			Perun::conclude_dispute(Origin::signed(setup.ids.alice), params),
-			pallet_perun::Error::<Test>::UnknownDispute
-		);
-	});
-}
-
-#[test]
-fn conclude_d_too_early() {
-	run_test(|setup| {
-		call_dispute(setup, false);
-
-		assert_noop!(
-			Perun::conclude_dispute(Origin::signed(setup.ids.alice), setup.params.clone()),
-			pallet_perun::Error::<Test>::ConcludedTooEarly
-		);
-		assert_num_event(1);
-	});
-}
-
-#[test]
-fn conclude_d_after_timeout() {
-	run_test(|setup| {
-		//Fund the channel.
-		assert_ok!(Perun::deposit(
-			Origin::signed(setup.ids.alice),
-			setup.fids.alice,
-			setup.state.balances[0]
-		));
-		assert_ok!(Perun::deposit(
-			Origin::signed(setup.ids.bob),
-			setup.fids.bob,
-			setup.state.balances[1]
-		));
-
-		call_dispute(&setup, false);
-		increment_time(setup.params.challenge_duration + 1);
-
-		assert_ok!(Perun::conclude_dispute(
-			Origin::signed(setup.ids.alice),
-			setup.params.clone()
-		));
-		event_concluded(setup.cid);
-	});
-}
-
-#[test]
-fn conclude_already_concluded() {
-	// With final
-	run_test(|setup| {
-		let mut state = setup.state.clone();
-		state.finalized = true;
-		// Set the balances to 0 so it does not fail bc of missing deposits.
-		state.balances = vec![0, 0];
-		let sigs = sign_state(&state, &setup);
-
-		assert_ok!(Perun::conclude(
-			Origin::signed(setup.ids.alice),
-			setup.params.clone(),
-			state.clone(),
-			sigs.clone()
-		));
-		event_concluded(state.channel_id);
-
-		assert_noop!(
-			Perun::conclude(
-				Origin::signed(setup.ids.alice),
-				setup.params.clone(),
-				state.clone(),
-				sigs
-			),
-			pallet_perun::Error::<Test>::AlreadyConcluded
-		);
-
-		assert_noop!(
-			Perun::conclude_dispute(Origin::signed(setup.ids.alice), setup.params.clone()),
-			pallet_perun::Error::<Test>::AlreadyConcluded
 		);
 	});
 }

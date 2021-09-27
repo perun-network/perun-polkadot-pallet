@@ -307,69 +307,32 @@ pub mod pallet {
 			state_sigs: Vec<T::Signature>,
 		) -> DispatchResult {
 			ensure_signed(origin)?;
-			ensure!(state.finalized, Error::<T>::StateNotFinal);
 			Self::validate_fully_signed(&params, &state, state_sigs)?;
 			let channel_id = state.channel_id;
 
-			// Cannot conclude with an active dispute.
-			match <StateRegister<T>>::get(&channel_id) {
-				Some(dispute) => {
-					if dispute.concluded {
-						Err(Error::<T>::AlreadyConcluded.into())
-					} else {
-						Err(Error::<T>::DisputeActive.into())
-					}
-				}
-				None => {
-					Self::push_outcome(channel_id, &params.participants, &state.balances)?;
-					<StateRegister<T>>::insert(
-						channel_id,
-						RegisteredState {
-							state,
-							// Timeout does not matter on finalized disputes.
-							timeout: 0.into(),
-							concluded: true,
-						},
-					);
-					Self::deposit_event(Event::Concluded(channel_id));
-					Ok(())
+			// Check if this channel is being disputed.
+			if let Some(dispute) = <StateRegister<T>>::get(&channel_id) {
+				ensure!(!dispute.concluded, Error::<T>::AlreadyConcluded);
+				// Non-finalized states need to respect the dispute timeout.
+				if !state.finalized {
+					let now = Self::now();
+					ensure!(now > dispute.timeout, Error::<T>::ConcludedTooEarly);
 				}
 			}
-		}
 
-		#[pallet::weight(10_000)]
-		/// Concluded a disputed channel.
-		///
-		/// Can only be called after the timeout of the dispute ran out or if
-		/// a finalized state is provided and signed by all participants.
-		///
-		/// Emits an [Event::Concluded] event on success.
-		pub fn conclude_dispute(origin: OriginFor<T>, params: ParamsOf<T>) -> DispatchResult {
-			ensure_signed(origin)?;
-			let channel_id = params.channel_id::<T::Hasher>();
-
-			match <StateRegister<T>>::get(&channel_id) {
-				Some(dispute) => {
-					ensure!(!dispute.concluded, Error::<T>::AlreadyConcluded);
-					if !dispute.state.finalized {
-						let now = Self::now();
-						ensure!(now > dispute.timeout, Error::<T>::ConcludedTooEarly);
-					}
-					Self::push_outcome(channel_id, &params.participants, &dispute.state.balances)?;
-					<StateRegister<T>>::insert(
-						&channel_id,
-						RegisteredState {
-							state: dispute.state,
-							// Timeout does not matter on finalized disputes.
-							timeout: 0.into(),
-							concluded: true,
-						},
-					);
-					Self::deposit_event(Event::Concluded(channel_id));
-					Ok(())
-				}
-				None => Err(Error::<T>::UnknownDispute.into()),
-			}
+			Self::push_outcome(channel_id, &params.participants, &state.balances)?;
+			// Set the channel to `concluded` instead of removing it from the map.
+			<StateRegister<T>>::insert(
+				channel_id,
+				RegisteredState {
+					state,
+					// Timeout does not matter on finalized disputes.
+					timeout: 0.into(),
+					concluded: true,
+				},
+			);
+			Self::deposit_event(Event::Concluded(channel_id));
+			Ok(())
 		}
 
 		#[pallet::weight(10_000)]
@@ -490,7 +453,7 @@ impl<T: Config> Pallet<T> {
 	#[cfg(feature = "expose_privates")]
 	pub fn push_outcome_test(
 		channel: ChannelIdOf<T>,
-		parts: &[T::PK],
+		parts: &[PkOf<T>],
 		outcome: &[BalanceOf<T>],
 	) -> DispatchResult {
 		Self::push_outcome(channel, parts, outcome)

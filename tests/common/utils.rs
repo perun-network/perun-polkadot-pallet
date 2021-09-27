@@ -119,3 +119,16 @@ pub fn sign_withdrawal(withdrawal: &WithdrawalOf<Test>, setup: &Setup) -> Vec<Si
 	let sig_bob = setup.keys.bob.sign(&raw);
 	vec![sig_alice, sig_bob]
 }
+
+pub fn deposit_both(setup: &Setup) {
+	assert_ok!(Perun::deposit(
+		Origin::signed(setup.ids.alice),
+		setup.fids.alice,
+		setup.state.balances[0]
+	));
+	assert_ok!(Perun::deposit(
+		Origin::signed(setup.ids.bob),
+		setup.fids.bob,
+		setup.state.balances[1]
+	));
+}

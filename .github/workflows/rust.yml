@@ -2,9 +2,8 @@ name: Rust
 
 on:
   push:
-    branches: [ master, dev ]
+    branches: [master, dev]
   pull_request:
-    branches: [ master ]
 
 env:
   CARGO_TERM_COLOR: always
@@ -19,7 +18,7 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly
-        
+
       - uses: Swatinem/rust-cache@v1
         name: Setup Cache
 
@@ -52,9 +51,18 @@ jobs:
         with:
           command: clippy
           args: -q --all-features
-        
+
       - uses: actions-rs/cargo@v1
         name: Test
         with:
           command: test
           args: --all-features
+
+      - name: Coverage generation
+        run: cargo make coverage-flow
+
+      - uses: codecov/codecov-action@v2
+        name: Codecov upload
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false

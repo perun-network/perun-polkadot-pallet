@@ -52,7 +52,7 @@ All participants can then withdrawn their funds after the dispute was resolved.
                │                             │
                ▼                             │
            ┌────────┐                        │
-     ┌─────┤        │  ConcludeDispute       │
+     ┌─────┤        │     Conclude           │
   Dis│pute │DISPUTED├────────────────────────┘
      └────►│        │
            └────────┘
