@@ -116,17 +116,8 @@ fn withdraw_ok() {
 	run_test(|setup| {
 		// Deposit
 		{
-			assert_ok!(Perun::deposit(
-				Origin::signed(setup.ids.alice),
-				setup.fids.alice,
-				10
-			));
+			deposit_both(&setup);
 			assert_eq!(Balances::free_balance(setup.ids.alice), 90);
-			assert_ok!(Perun::deposit(
-				Origin::signed(setup.ids.bob),
-				setup.fids.bob,
-				5
-			));
 			assert_eq!(Balances::free_balance(setup.ids.bob), 95);
 		}
 

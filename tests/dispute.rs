@@ -56,6 +56,35 @@ fn dispute_final() {
 }
 
 #[test]
+fn dispute_already_concluded() {
+	run_test(|setup| {
+		deposit_both(&setup);
+		call_dispute(&setup, false);
+		let mut state = setup.state.clone();
+		state.finalized = true;
+		let sigs = sign_state(&state, &setup);
+
+		assert_ok!(Perun::conclude(
+			Origin::signed(setup.ids.alice),
+			setup.params.clone(),
+			state.clone(),
+			sigs.clone()
+		));
+		// Dispute again after conclusion with the non-final state.
+		let sigs = sign_state(&setup.state, &setup);
+		assert_noop!(
+			Perun::dispute(
+				Origin::signed(setup.ids.alice),
+				setup.params.clone(),
+				setup.state.clone(),
+				sigs
+			),
+			pallet_perun::Error::<Test>::AlreadyConcluded
+		);
+	});
+}
+
+#[test]
 fn dispute_challenge_duration_overflow() {
 	run_test(|setup| {
 		let mut params = setup.params.clone();
