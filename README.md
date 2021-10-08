@@ -27,53 +27,20 @@ Using it in your blockchain means to include it just like any other Substrate Pa
 
 ## Protocol
 
-A state channel is opened by depositing funds for it into the pallet by calling *Deposit*.  
-The participants of the channel can then do as many off-chain channel updates as they want.  
-When all participants come to the conclusion that the channel should be closed, they set the final flag on the channel state, and call *Conclude*.  
-All of them can then withdraw the outcome with *Withdraw*, which closes the channel.  
+A channel is opened by depositing funds for it into the contract by calling *Deposit*.
+The participants of the channel can then do as many off-chain channel updates as they want.
+When all participants come to the conclusion that the channel should be closed, they set the final flag on the channel state, and call *Conclude*.
+All of them can then withdraw the outcome by calling *Withdraw*. 
 
-*Dispute* and *ConcludeDispute* are only needed for the dispute case.  
-They allow every participant to enforce the last valid state, i.e., the mutually-signed state with the highest version number.  
-A dispute is initiated by calling dispute with the latest available state. A registered state can be refuted by calling dispute with a newer state.
-All participants can then withdrawn their funds after the dispute was resolved.
+*Dispute* is only needed if the participants do not arrive at a final channel state off-chain.
+It allows any participant to enforce the last valid state, i.e., the mutually-signed state with the highest version number.
+A dispute is initiated by calling *Dispute* with the latest available state.
+A registered state can be refuted within a specified challenge period by calling *Dispute* with a newer state.
+After the challenge period, the dispute can be concluded by calling *Conclude* and the funds can be withdrawn.
 
 ### State diagram
 
-```pre
-           ┌────────┐                 ┌─────────────┐            ┌─────────────┐
-  Deposit  │        │    Conclude     │             │  Withdraw  │             │
-──────────►│  OPEN  ├────────────────►│  CONCLUDED  ├───────────►│  WITHDRAWN  │
-           │        │                 │             │            │             │
-           └───┬────┘                 └─────────────┘            └─────────────┘
-               │                             ▲
-               │                             │
-            Dispute                          │
-               │                             │
-               │                             │
-               ▼                             │
-           ┌────────┐                        │
-     ┌─────┤        │  ConcludeDispute       │
-  Dis│pute │DISPUTED├────────────────────────┘
-     └────►│        │
-           └────────┘
-```
-
-### Functions and Types
-
-Functions
-- **Deposit(funding_id, amount)** allows a participant to transfer funds into a channel. It is called by each channel participant in order to open the channel.
-- **Conclude(params, state, sigs)** collaboratively closes a channel in one step. Only works if all participants signed the state.
-- **Dispute(params, state, sigs)** opens a dispute with the passed *state*. Only works if all participants signed the state.
-- **ConcludeDispute(params, channel_id)** concludes a dispute after its timeout ran out.
-- **Withdraw(withdrawal, sig)** withdraws the outcome of a channel of a single participants. All participants can call this function after the channel is concluded.
-
-Types
-- **Params** defines the constant configuration of a channel.
-- **State** represents an off-chain state of a channel.
-- **Withdrawal** authorizes an on-chain funds withdrawal.
-- **RegisteredState** stores a dispute.
-- **Channel ID** (aka *channel_id*) uniquely identifies a channel. Calculated as `Hash(params)`.
-- **Funding ID** (aka *funding_id*) uniquely identifies a participant in a channel. Calculated as `Hash(channel_id|participant)`.
+![state diagram](.assets/protocol.png)
 
 ### Tests
 
