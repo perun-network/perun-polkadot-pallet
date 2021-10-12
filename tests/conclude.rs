@@ -175,7 +175,7 @@ fn conclude_insufficient_deposits() {
 }
 
 #[test]
-fn conclude_already_concluded() {
+fn conclude_already_concluded_different_version() {
 	run_test(|setup| {
 		deposit_both(&setup);
 		call_dispute(&setup, false);
@@ -189,7 +189,10 @@ fn conclude_already_concluded() {
 			state.clone(),
 			sigs.clone()
 		));
-		// Twice
+
+		// Concluding twice with a different version errors.
+		state.version = state.version + 1;
+		let sigs = sign_state(&state, &setup);
 		assert_noop!(
 			Perun::conclude(
 				Origin::signed(setup.ids.alice),
@@ -197,8 +200,36 @@ fn conclude_already_concluded() {
 				state.clone(),
 				sigs
 			),
-			pallet_perun::Error::<Test>::AlreadyConcluded
+			pallet_perun::Error::<Test>::ConcludedWithDifferentVersion
 		);
+	});
+}
+
+#[test]
+fn conclude_twice() {
+	run_test(|setup| {
+		deposit_both(&setup);
+		call_dispute(&setup, false);
+		let mut state = setup.state.clone();
+		state.finalized = true;
+		let sigs = sign_state(&state, &setup);
+
+		assert_ok!(Perun::conclude(
+			Origin::signed(setup.ids.alice),
+			setup.params.clone(),
+			state.clone(),
+			sigs.clone()
+		));
+
+		// Twice works, but no new event will be emitted.
+		let events = num_events();
+		assert_ok!(Perun::conclude(
+			Origin::signed(setup.ids.alice),
+			setup.params.clone(),
+			state.clone(),
+			sigs
+		));
+		assert_num_event(events);
 	});
 }
 

@@ -67,6 +67,11 @@ pub fn assert_no_events() {
 	assert!(System::events().is_empty());
 }
 
+/// The number of events that were emitted.
+pub fn num_events() -> usize {
+	System::events().len()
+}
+
 /// Asserts that exactly `num` events were emitted.
 pub fn assert_num_event(num: usize) {
 	assert_eq!(num, System::events().len());
