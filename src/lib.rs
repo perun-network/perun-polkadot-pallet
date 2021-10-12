@@ -155,6 +155,8 @@ pub mod pallet {
 		ConcludedTooEarly,
 		/// The channel was not concluded.
 		NotConcluded,
+		// The channel was already concluded but with a different version.
+		ConcludedWithDifferentVersion,
 
 		/// The desired outcome overflows the Balance type.
 		OutcomeOverflow,
@@ -310,7 +312,13 @@ pub mod pallet {
 
 			// Check if this channel is being disputed.
 			if let Some(dispute) = <StateRegister<T>>::get(&channel_id) {
-				ensure!(!dispute.concluded, Error::<T>::AlreadyConcluded);
+				if dispute.concluded {
+					ensure!(
+						dispute.state.version == state.version,
+						Error::<T>::ConcludedWithDifferentVersion
+					);
+					return Ok(());
+				}
 				// Non-finalized states need to respect the dispute timeout.
 				if !state.finalized {
 					let now = Self::now();
