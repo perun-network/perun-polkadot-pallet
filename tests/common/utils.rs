@@ -67,6 +67,11 @@ pub fn assert_no_events() {
 	assert!(System::events().is_empty());
 }
 
+/// The number of events that were emitted.
+pub fn num_events() -> usize {
+	System::events().len()
+}
+
 /// Asserts that exactly `num` events were emitted.
 pub fn assert_num_event(num: usize) {
 	assert_eq!(num, System::events().len());
@@ -118,4 +123,17 @@ pub fn sign_withdrawal(withdrawal: &WithdrawalOf<Test>, setup: &Setup) -> Vec<Si
 	let sig_alice = setup.keys.alice.sign(&raw);
 	let sig_bob = setup.keys.bob.sign(&raw);
 	vec![sig_alice, sig_bob]
+}
+
+pub fn deposit_both(setup: &Setup) {
+	assert_ok!(Perun::deposit(
+		Origin::signed(setup.ids.alice),
+		setup.fids.alice,
+		setup.state.balances[0]
+	));
+	assert_ok!(Perun::deposit(
+		Origin::signed(setup.ids.bob),
+		setup.fids.bob,
+		setup.state.balances[1]
+	));
 }
