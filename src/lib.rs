@@ -25,9 +25,14 @@
 
 use crate::types::*;
 
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
 pub use pallet::*;
+pub mod weights;
 
 pub mod types;
+
+pub use weights::WeightInfo;
 
 use frame_support::{
 	dispatch::DispatchResult,

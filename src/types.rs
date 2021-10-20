@@ -27,6 +27,7 @@ use sp_std::prelude::*;
 // Type alias.
 pub type BalanceOf<T> =
 	<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
+pub type CurrencyOf<T> = <T as Config>::Currency;
 pub type VersionOf<T> = <T as pallet::Config>::Version;
 pub type NonceOf<T> = <T as pallet::Config>::Nonce;
 pub type ChannelIdOf<T> = <T as pallet::Config>::HashValue;
