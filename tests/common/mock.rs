@@ -117,6 +117,7 @@ impl pallet_perun::Config for Test {
 	type Hasher = sp_core::KeccakHasher;
 	type HashValue = H256;
 	type Seconds = u64;
+	type WeightInfo = ();
 }
 
 pub struct IDs {

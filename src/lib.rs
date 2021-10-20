@@ -101,6 +101,9 @@ pub mod pallet {
 
 		/// Represent a time duration in seconds.
 		type Seconds: FullCodec + Member + CheckedAdd + PartialOrd + From<u64>;
+
+		/// Weight info for extrinsics in this pallet.
+		type WeightInfo: WeightInfo;
 	}
 
 	#[pallet::pallet]
