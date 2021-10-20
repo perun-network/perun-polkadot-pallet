@@ -42,7 +42,7 @@ use frame_support::{
 };
 use frame_system::{ensure_signed, pallet_prelude::*};
 use sp_runtime::traits::{AccountIdConversion, CheckedAdd, IdentifyAccount, Verify};
-use sp_std::vec::Vec;
+use sp_std::{cmp, ops::Range, vec::Vec};
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -67,6 +67,10 @@ pub mod pallet {
 		/// Use this to prevent the deposits map from being littered.
 		#[pallet::constant]
 		type MinDeposit: Get<BalanceOf<Self>>;
+
+		/// Valid range for the number of participants in a channel.
+		#[pallet::constant]
+		type ParticipantNum: Get<Range<u32>>;
 
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
@@ -185,6 +189,8 @@ pub mod pallet {
 		/// There must be as many signatures as participants in the params.
 		/// Can also be returned if the number of sigs is 0.
 		InvalidSignatureNum,
+		/// The number of participants did not respect the configured limits.
+		InvalidParticipantNum,
 
 		/// The referenced deposit could not be found.
 		UnknownDeposit,
@@ -477,8 +483,11 @@ impl<T: Config> Pallet<T> {
 		state: &StateOf<T>,
 		state_sigs: Vec<T::Signature>,
 	) -> DispatchResult {
-		// Channels without participants are invalid.
-		ensure!(!state_sigs.is_empty(), Error::<T>::InvalidSignatureNum);
+		// The number of participants is valid.
+		ensure!(
+			T::ParticipantNum::get().contains(&(state_sigs.len() as u32)),
+			Error::<T>::InvalidParticipantNum
+		);
 		// Check that the State and Params match.
 		let channel_id = params.channel_id::<T::Hasher>();
 		ensure!(state.channel_id == channel_id, Error::<T>::InvalidChannelId);

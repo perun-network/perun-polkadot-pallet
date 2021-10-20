@@ -24,6 +24,7 @@ use sp_runtime::{
 	traits::{BlakeTwo256, IdentityLookup},
 	BuildStorage,
 };
+use sp_std::ops::Range;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -101,11 +102,13 @@ impl pallet_timestamp::Config for Test {
 parameter_types! {
 	pub const PerunPalletId: PalletId = PalletId(*b"prnstchs");
 	pub const PerunMinDeposit: u64 = 5;
+	pub const PerunParticipantNum: Range<u32> = 1..256;
 }
 impl pallet_perun::Config for Test {
 	type Event = Event;
 	type PalletId = PerunPalletId;
 	type MinDeposit = PerunMinDeposit;
+	type ParticipantNum = PerunParticipantNum;
 	type Currency = Balances;
 	type Version = u32;
 	type Nonce = [u8; 32];

@@ -58,13 +58,35 @@ fn conclude_not_final() {
 }
 
 #[test]
+fn conclude_invalid_part_num() {
+	run_test(|setup| {
+		let mut state = setup.state.clone();
+		state.finalized = true;
+		let bad_sigs = vec![
+			vec![], // No parts
+		];
+		for bad_sig in bad_sigs {
+			assert_noop!(
+				Perun::conclude(
+					Origin::signed(setup.ids.carl),
+					setup.params.clone(),
+					state.clone(),
+					bad_sig
+				),
+				pallet_perun::Error::<Test>::InvalidParticipantNum
+			);
+		}
+		assert_no_events();
+	});
+}
+
+#[test]
 fn conclude_invalid_sig_nums() {
 	run_test(|setup| {
 		let mut state = setup.state.clone();
 		state.finalized = true;
 		let sigs = sign_state(&setup.state, &setup);
 		let bad_sigs = vec![
-			vec![],                                                  // No sigs
 			vec![sigs[0].clone()],                                   // One sig
 			vec![sigs[0].clone(), sigs[0].clone(), sigs[0].clone()], // Three sigs
 		];
