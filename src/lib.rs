@@ -204,7 +204,6 @@ pub mod pallet {
 	#[pallet::call]
 	/// Contains all user-facing functions.
 	impl<T: Config> Pallet<T> {
-		#[pallet::weight(10_000)]
 		/// Deposits funds for a participant into a channel.
 		///
 		/// The `funding_id` is calculated with [Pallet::calc_funding_id].
@@ -217,6 +216,7 @@ pub mod pallet {
 		/// Over-funding a channel can result in lost funds.
 		///
 		/// Emits an [Event::Deposited] event on success.
+		#[pallet::weight(WeightInfoOf::<T>::deposit())]
 		pub fn deposit(
 			origin: OriginFor<T>,
 			funding_id: FundingIdOf<T>,
@@ -240,7 +240,6 @@ pub mod pallet {
 			Ok(())
 		}
 
-		#[pallet::weight(10_000)]
 		/// Disputes a channel in case of a dishonest participant.
 		///
 		/// Can only be called with a non-finalized state that is signed by
@@ -252,6 +251,8 @@ pub mod pallet {
 		/// [Pallet::conclude] can be called to conclude the dispute.
 		///
 		/// Emits an [Event::Disputed] event on success.
+		#[pallet::weight(WeightInfoOf::<T>::dispute(
+			cmp::min(state_sigs.len() as u32, T::ParticipantNum::get().end)))]
 		pub fn dispute(
 			origin: OriginFor<T>,
 			params: ParamsOf<T>,
@@ -304,8 +305,6 @@ pub mod pallet {
 				}
 			}
 		}
-
-		#[pallet::weight(10_000)]
 		/// Collaboratively concludes a channel in one step.
 		///
 		/// This function concludes a channel in the case that all participants
@@ -314,6 +313,8 @@ pub mod pallet {
 		/// all participants.
 		///
 		/// Emits an [Event::Concluded] event on success.
+		#[pallet::weight(WeightInfoOf::<T>::conclude(
+			cmp::min(state_sigs.len() as u32, T::ParticipantNum::get().end)))]
 		pub fn conclude(
 			origin: OriginFor<T>,
 			params: ParamsOf<T>,
@@ -357,7 +358,6 @@ pub mod pallet {
 			Ok(())
 		}
 
-		#[pallet::weight(10_000)]
 		/// Withdraws funds from a concluded channel.
 		///
 		/// Can be called by each participant after a channel was concluded to
@@ -365,6 +365,7 @@ pub mod pallet {
 		/// This is the counterpart to [Pallet::deposit].
 		///
 		/// Emits an [Event::Withdrawn] event on success.
+		#[pallet::weight(WeightInfoOf::<T>::withdraw())]
 		pub fn withdraw(
 			origin: OriginFor<T>,
 			withdrawal: WithdrawalOf<T>,
