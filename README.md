@@ -46,7 +46,7 @@ After the challenge period, the dispute can be concluded by calling *Conclude* a
 
 The tests can be run with:
 ```bash
-cargo test --all-features
+cargo test
 ```
 
 or in docker:
@@ -56,6 +56,12 @@ or in docker:
 docker build -t perun .
 docker run --rm perun
 ```
+
+### Benchmarking
+
+The benchmarks use cryptographic primitives which are only available in a Substrate node.  
+A node is provided by the [Polkadot Node] repo of which this repo is a sub-repo.  
+Have a look [there] for instructions on how to run the benchmarks.  
 
 ### Documentation
 
@@ -94,6 +100,10 @@ Use of the source code is governed by the Apache 2.0 license that can be found i
 
 [go-perun]: https://github.com/hyperledger-labs/go-perun
 [Perun Pallet]: https://github.com/perun-network/perun-polkadot-pallet
+<!-- markdown-link-check-disable -->
+[Polkadot Node]: https://github.com/perun-network/perun-polkadot-node
+[there]: https://github.com/perun-network/perun-polkadot-node/blob/master/README.md#benchmarking
+<!-- markdown-link-check-enable -->
 [frontend template]: https://github.com/substrate-developer-hub/substrate-front-end-template
 
 [Open Grant]: https://github.com/perun-network/Open-Grants-Program/blob/master/applications/perun_channels.md#w3f-open-grant-proposal

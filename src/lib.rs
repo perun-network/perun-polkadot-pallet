@@ -25,9 +25,14 @@
 
 use crate::types::*;
 
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
 pub use pallet::*;
+pub mod weights;
 
 pub mod types;
+
+pub use weights::WeightInfo;
 
 use frame_support::{
 	dispatch::DispatchResult,
@@ -37,7 +42,7 @@ use frame_support::{
 };
 use frame_system::{ensure_signed, pallet_prelude::*};
 use sp_runtime::traits::{AccountIdConversion, CheckedAdd, IdentifyAccount, Verify};
-use sp_std::vec::Vec;
+use sp_std::{cmp, ops::Range, vec::Vec};
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -62,6 +67,10 @@ pub mod pallet {
 		/// Use this to prevent the deposits map from being littered.
 		#[pallet::constant]
 		type MinDeposit: Get<BalanceOf<Self>>;
+
+		/// Valid range for the number of participants in a channel.
+		#[pallet::constant]
+		type ParticipantNum: Get<Range<u32>>;
 
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
@@ -92,6 +101,9 @@ pub mod pallet {
 
 		/// Represent a time duration in seconds.
 		type Seconds: FullCodec + Member + CheckedAdd + PartialOrd + From<u64>;
+
+		/// Weight info for extrinsics in this pallet.
+		type WeightInfo: WeightInfo;
 	}
 
 	#[pallet::pallet]
@@ -180,6 +192,8 @@ pub mod pallet {
 		/// There must be as many signatures as participants in the params.
 		/// Can also be returned if the number of sigs is 0.
 		InvalidSignatureNum,
+		/// The number of participants did not respect the configured limits.
+		InvalidParticipantNum,
 
 		/// The referenced deposit could not be found.
 		UnknownDeposit,
@@ -190,7 +204,6 @@ pub mod pallet {
 	#[pallet::call]
 	/// Contains all user-facing functions.
 	impl<T: Config> Pallet<T> {
-		#[pallet::weight(10_000)]
 		/// Deposits funds for a participant into a channel.
 		///
 		/// The `funding_id` is calculated with [Pallet::calc_funding_id].
@@ -203,6 +216,7 @@ pub mod pallet {
 		/// Over-funding a channel can result in lost funds.
 		///
 		/// Emits an [Event::Deposited] event on success.
+		#[pallet::weight(WeightInfoOf::<T>::deposit())]
 		pub fn deposit(
 			origin: OriginFor<T>,
 			funding_id: FundingIdOf<T>,
@@ -226,7 +240,6 @@ pub mod pallet {
 			Ok(())
 		}
 
-		#[pallet::weight(10_000)]
 		/// Disputes a channel in case of a dishonest participant.
 		///
 		/// Can only be called with a non-finalized state that is signed by
@@ -238,6 +251,8 @@ pub mod pallet {
 		/// [Pallet::conclude] can be called to conclude the dispute.
 		///
 		/// Emits an [Event::Disputed] event on success.
+		#[pallet::weight(WeightInfoOf::<T>::dispute(
+			cmp::min(state_sigs.len() as u32, T::ParticipantNum::get().end)))]
 		pub fn dispute(
 			origin: OriginFor<T>,
 			params: ParamsOf<T>,
@@ -290,8 +305,6 @@ pub mod pallet {
 				}
 			}
 		}
-
-		#[pallet::weight(10_000)]
 		/// Collaboratively concludes a channel in one step.
 		///
 		/// This function concludes a channel in the case that all participants
@@ -300,6 +313,8 @@ pub mod pallet {
 		/// all participants.
 		///
 		/// Emits an [Event::Concluded] event on success.
+		#[pallet::weight(WeightInfoOf::<T>::conclude(
+			cmp::min(state_sigs.len() as u32, T::ParticipantNum::get().end)))]
 		pub fn conclude(
 			origin: OriginFor<T>,
 			params: ParamsOf<T>,
@@ -343,7 +358,6 @@ pub mod pallet {
 			Ok(())
 		}
 
-		#[pallet::weight(10_000)]
 		/// Withdraws funds from a concluded channel.
 		///
 		/// Can be called by each participant after a channel was concluded to
@@ -351,6 +365,7 @@ pub mod pallet {
 		/// This is the counterpart to [Pallet::deposit].
 		///
 		/// Emits an [Event::Withdrawn] event on success.
+		#[pallet::weight(WeightInfoOf::<T>::withdraw())]
 		pub fn withdraw(
 			origin: OriginFor<T>,
 			withdrawal: WithdrawalOf<T>,
@@ -472,8 +487,11 @@ impl<T: Config> Pallet<T> {
 		state: &StateOf<T>,
 		state_sigs: Vec<T::Signature>,
 	) -> DispatchResult {
-		// Channels without participants are invalid.
-		ensure!(!state_sigs.is_empty(), Error::<T>::InvalidSignatureNum);
+		// The number of participants is valid.
+		ensure!(
+			T::ParticipantNum::get().contains(&(state_sigs.len() as u32)),
+			Error::<T>::InvalidParticipantNum
+		);
 		// Check that the State and Params match.
 		let channel_id = params.channel_id::<T::Hasher>();
 		ensure!(state.channel_id == channel_id, Error::<T>::InvalidChannelId);

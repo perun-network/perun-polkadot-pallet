@@ -103,11 +103,31 @@ fn dispute_challenge_duration_overflow() {
 }
 
 #[test]
+fn dispute_invalid_part_num() {
+	run_test(|setup| {
+		let bad_sigs = vec![
+			vec![], // No parts
+		];
+		for bad_sig in bad_sigs {
+			assert_noop!(
+				Perun::dispute(
+					Origin::signed(setup.ids.carl),
+					setup.params.clone(),
+					setup.state.clone(),
+					bad_sig
+				),
+				pallet_perun::Error::<Test>::InvalidParticipantNum
+			);
+		}
+		assert_no_events();
+	});
+}
+
+#[test]
 fn dispute_invalid_sig_nums() {
 	run_test(|setup| {
 		let sigs = sign_state(&setup.state, &setup);
 		let bad_sigs = vec![
-			vec![],                                                  // No sigs
 			vec![sigs[0].clone()],                                   // One sig
 			vec![sigs[0].clone(), sigs[0].clone(), sigs[0].clone()], // Three sigs
 		];
