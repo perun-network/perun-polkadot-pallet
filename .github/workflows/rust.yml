@@ -2,7 +2,7 @@ name: Rust
 
 on:
   push:
-    branches: [ master, dev ]
+    branches: [ master ]
   pull_request:
     branches: [ master ]
 
@@ -13,13 +13,17 @@ env:
 jobs:
   ci:
     runs-on: ubuntu-latest
-
+    env:
+      KCOV_OUT: "target/cov/pallet_perun"
+      KCOV: "~/cache/usr/local/bin/kcov"
     steps:
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: 2  # CodeCov needs this
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly
-        
+
       - uses: Swatinem/rust-cache@v1
         name: Setup Cache
 
@@ -52,9 +56,92 @@ jobs:
         with:
           command: clippy
           args: -q --all-features
-        
+
       - uses: actions-rs/cargo@v1
         name: Test
         with:
           command: test
-          args: --all-features
+          args: --all-targets --all-features
+
+      - name: kcov cache
+        uses: actions/cache@v2
+        with:
+          path: ~/cache
+          key: ${{ runner.os }}-kcov-wget
+
+      - name: kcov install deps
+        run: |
+          # These deps are needed to execute kcov.
+          sudo apt-get update && sudo apt-get install -y \
+            binutils \
+            libcurl4 \
+            libdw1 \
+            zlib1g
+
+      - name: kcov install
+        run: |
+          KCOV=${{ env.KCOV }}
+
+          # First time cache init.
+          mkdir -p ~/cache
+          # Download the last kcov sources to new-master.tar.gz.
+          wget -O new-master.tar.gz https://github.com/SimonKagstrom/kcov/archive/master.tar.gz
+
+          # Check if the downloaded version is different from the cached one and if
+          # kcov is successfully installed.
+          if cmp -s new-master.tar.gz ~/cache/master.tar.gz && [ -x "$KCOV" ]; then
+            echo "Kcov version was cached; exit"
+            exit 0
+          else
+            echo "New kcov version; compiling"
+            mv new-master.tar.gz ~/cache/master.tar.gz
+          fi
+
+          # Install deps for compilation.
+          sudo apt-get update && sudo apt-get install -y \
+            binutils-dev \
+            build-essential \
+            cmake \
+            git \
+            libcurl4-openssl-dev \
+            libdw-dev \
+            libiberty-dev \
+            libssl-dev \
+            ninja-build \
+            python3 \
+            zlib1g-dev
+          
+          # Compile and install kcov.
+          tar xzf ~/cache/master.tar.gz
+          cd kcov-master
+          mkdir build
+          cd build
+          cmake ..
+          make -j $(nproc)
+          make install DESTDIR=~/cache/
+          cd ../..
+          rm -rf kcov-master
+
+      - name: kcov coverage
+        run: |
+          KCOV_OUT=${{ env.KCOV_OUT }}
+          KCOV=${{ env.KCOV }}
+
+          rm -rf "$KCOV_OUT" && mkdir -p "$KCOV_OUT"
+
+          # Execute the test binaries one by one through kcov.
+          for FILE in conclude deposit dispute unit withdraw; do
+            TEST=$(find target/debug/deps/ -type f -name "$FILE*" -not -name '*.d')
+            [ -x "$TEST" ] || continue
+            echo "Covering $TEST"
+            $KCOV --exclude-pattern=/.cargo,/usr/lib --verify "$KCOV_OUT/unmerged-$FILE" "$TEST"
+          done
+
+          echo "Merging coverage results into $KCOV_OUT/merged"
+          $KCOV --merge "$KCOV_OUT/merged" "$KCOV_OUT"/unmerged-*
+
+      - name: CodeCov upload
+        uses: codecov/codecov-action@v2
+        with:
+          directory: "${{ env.KCOV_OUT }}/merged"
+          fail_ci_if_error: true
