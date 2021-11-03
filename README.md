@@ -7,6 +7,9 @@
 <p align="center">
   <a href="https://www.apache.org/licenses/LICENSE-2.0.txt"><img src="https://img.shields.io/badge/license-Apache%202-blue" alt="License: Apache 2.0"></a>
   <a href="https://github.com/perun-network/perun-polkadot-pallet/actions/workflows/rust.yml"><img src="https://github.com/perun-network/perun-polkadot-pallet/actions/workflows/rust.yml/badge.svg"></a>
+  <a href="https://codecov.io/gh/perun-network/perun-polkadot-pallet">
+    <img src="https://codecov.io/gh/perun-network/perun-polkadot-pallet/branch/master/graph/badge.svg?token=GJ1YX73FLP"/>
+  </a>
 </p>
 
 *Perun Polkadot Pallet* provides [go-perun] state channels for all Substrate compatible blockchains.  
