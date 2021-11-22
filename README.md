@@ -47,7 +47,7 @@ After the challenge period, the dispute can be concluded by calling *Conclude* a
 
 ### Tests
 
-The tests can be run with:
+The tests require at least rust version `1.52.0` and can be run with:
 ```bash
 cargo test
 ```
