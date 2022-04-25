@@ -166,8 +166,8 @@ pub mod pallet {
 		/// The challenge duration is too large.
 		ChallengeDurationOverflow,
 
-		/// The channel is already concluded.
-		AlreadyConcluded,
+		/// Operation is invalid in current phase.
+		WrongPhase,
 		/// The dispute timeout did not yet elapse.
 		ConcludedTooEarly,
 		/// The channel was not concluded.
@@ -281,16 +281,16 @@ pub mod pallet {
 					<StateRegister<T>>::insert(
 						channel_id,
 						RegisteredState {
+							phase: Phase::Register,
 							state: state.clone(),
 							timeout,
-							concluded: false,
 						},
 					);
 					Self::deposit_event(Event::Disputed(channel_id, state));
 					Ok(())
 				}
 				Some(dispute) => {
-					ensure!(!dispute.concluded, Error::<T>::AlreadyConcluded);
+					ensure!(dispute.phase == Phase::Register, Error::<T>::WrongPhase);
 					// Only register a new dispute iff the timeout still runs
 					// a newer version came in.
 					ensure!(
@@ -302,9 +302,9 @@ pub mod pallet {
 					<StateRegister<T>>::insert(
 						channel_id,
 						RegisteredState {
+							phase: Phase::Register,
 							state: state.clone(),
 							timeout: dispute.timeout,
-							concluded: false,
 						},
 					);
 					Self::deposit_event(Event::Disputed(channel_id, state));
@@ -335,7 +335,7 @@ pub mod pallet {
 
 			// Check if this channel is being disputed.
 			if let Some(dispute) = <StateRegister<T>>::get(&channel_id) {
-				if dispute.concluded {
+				if dispute.phase == Phase::Conclude {
 					ensure!(
 						dispute.state.version == state.version,
 						Error::<T>::ConcludedWithDifferentVersion
@@ -356,10 +356,10 @@ pub mod pallet {
 			<StateRegister<T>>::insert(
 				channel_id,
 				RegisteredState {
+					phase: Phase::Conclude,
 					state,
 					// Timeout does not matter on finalized disputes.
 					timeout: 0.into(),
-					concluded: true,
 				},
 			);
 			Self::deposit_event(Event::Concluded(channel_id));
@@ -387,7 +387,7 @@ pub mod pallet {
 
 			match <StateRegister<T>>::get(withdrawal.channel_id) {
 				Some(dispute) => {
-					ensure!(dispute.concluded, Error::<T>::NotConcluded);
+					ensure!(dispute.phase == Phase::Conclude, Error::<T>::NotConcluded);
 					let funding_id = Self::calc_funding_id(withdrawal.channel_id, &withdrawal.part);
 					// Get and remove the deposit.
 					match <Deposits<T>>::take(funding_id) {

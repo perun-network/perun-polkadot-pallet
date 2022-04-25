@@ -79,7 +79,7 @@ fn dispute_already_concluded() {
 				setup.state.clone(),
 				sigs
 			),
-			pallet_perun::Error::<Test>::AlreadyConcluded
+			pallet_perun::Error::<Test>::WrongPhase
 		);
 	});
 }

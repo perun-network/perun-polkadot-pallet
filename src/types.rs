@@ -104,11 +104,21 @@ pub struct State<ChannelId, Version, Balance> {
 }
 
 #[derive(Encode, Decode, Copy, Clone, PartialEq, RuntimeDebug)]
+pub enum Phase {
+	Register,
+	Progress,
+	Conclude,
+}
+
+#[derive(Encode, Decode, Copy, Clone, PartialEq, RuntimeDebug)]
 #[codec(dumb_trait_bound)]
 /// Off-chain [State] that was registered on-chain.
 ///
 /// Is used to track disputes and concluded channels.
 pub struct RegisteredState<State, Seconds> {
+	// The protocol phase.
+	pub phase: Phase,
+
 	/// The registered state.
 	pub state: State,
 
@@ -116,12 +126,6 @@ pub struct RegisteredState<State, Seconds> {
 	///
 	/// Has no meaning for final states.
 	pub timeout: Seconds,
-
-	/// Set iff a channel is concluded.
-	///
-	/// This means that no other function than [Pallet::withdraw] can be
-	/// called on the channel.
-	pub concluded: bool,
 }
 
 #[derive(Encode, Decode, Default, Copy, Clone, PartialEq, RuntimeDebug)]
