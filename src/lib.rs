@@ -342,10 +342,15 @@ pub mod pallet {
 					);
 					return Ok(());
 				}
-				// Non-finalized states need to respect the dispute timeout.
+				// Non-finalized states must respect phase timeout.
 				if !state.finalized {
+					// Extend timeout for app channels.
+					let mut timeout = dispute.timeout;
+					if dispute.phase == Phase::Register && params.app != NO_APP {
+						timeout = timeout + params.challenge_duration;
+					}
 					let now = Self::now();
-					ensure!(now > dispute.timeout, Error::<T>::ConcludedTooEarly);
+					ensure!(now > timeout, Error::<T>::ConcludedTooEarly);
 				}
 			} else {
 				ensure!(state.finalized, Error::<T>::StateNotFinal);
