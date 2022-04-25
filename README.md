@@ -93,10 +93,8 @@ Use of the source code is governed by the Apache 2.0 license that can be found i
 
 [go-perun]: https://github.com/hyperledger-labs/go-perun
 [Perun Pallet]: https://github.com/perun-network/perun-polkadot-pallet
-<!-- markdown-link-check-disable -->
 [Polkadot Node]: https://github.com/perun-network/perun-polkadot-node
 [there]: https://github.com/perun-network/perun-polkadot-node/blob/master/README.md#benchmarking
-<!-- markdown-link-check-enable -->
 [frontend template]: https://github.com/substrate-developer-hub/substrate-front-end-template
 
 [Open Grant]: https://github.com/perun-network/Open-Grants-Program/blob/master/applications/perun_channels.md#w3f-open-grant-proposal
