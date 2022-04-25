@@ -17,7 +17,7 @@ use pallet_balances;
 use super::utils::increment_time;
 
 use frame_support::{parameter_types, PalletId};
-use pallet_perun::types::{BalanceOf, FundingIdOf, HasherOf, ParamsOf, StateOf};
+use pallet_perun::types::{BalanceOf, FundingIdOf, HasherOf, ParamsOf, StateOf, NO_APP};
 use sp_core::{crypto::*, H256};
 use sp_runtime::{
 	testing::Header,
@@ -161,6 +161,7 @@ pub fn new_setup() -> Setup {
 		],
 		participants: vec![keys[0].public(), keys[1].public()],
 		challenge_duration: 10,
+		app: NO_APP,
 	};
 	let cid = params.channel_id::<HasherOf<Test>>();
 
@@ -186,6 +187,7 @@ pub fn new_setup() -> Setup {
 			version: 123,
 			balances: vec![10, 5],
 			finalized: false,
+			data: vec![],
 		},
 		params: params,
 	}

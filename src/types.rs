@@ -45,6 +45,10 @@ pub type RegisteredStateOf<T> = RegisteredState<StateOf<T>, SecondsOf<T>>;
 pub type WithdrawalOf<T> = Withdrawal<ChannelIdOf<T>, PkOf<T>, AccountIdOf<T>>;
 pub type FundingOf<T> = Funding<ChannelIdOf<T>, PkOf<T>>;
 
+pub type AppId = u64;
+pub type AppData = Vec<u8>;
+pub const NO_APP: AppId = 0;
+
 #[derive(Encode, Decode, Default, Clone, PartialEq, RuntimeDebug)]
 #[codec(dumb_trait_bound)]
 /// Fixed parameters of a channel.
@@ -59,6 +63,9 @@ pub struct Params<Nonce, PK, Seconds> {
 
 	/// Challenge duration of the channel.
 	pub challenge_duration: Seconds,
+
+	// App in channel.
+	pub app: AppId,
 }
 
 #[derive(Encode, Decode, Default, Clone, PartialEq, RuntimeDebug)]
@@ -90,6 +97,9 @@ pub struct State<ChannelId, Version, Balance> {
 	/// An honest participant will never sign another state after he signed a
 	/// final state.
 	pub finalized: bool,
+
+	// App data.
+	pub data: AppData,
 }
 
 #[derive(Encode, Decode, Copy, Clone, PartialEq, RuntimeDebug)]
