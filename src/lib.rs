@@ -23,6 +23,7 @@
 // Error on broken doc links.
 #![deny(rustdoc::broken_intra_doc_links)]
 
+use crate::appregistry::*;
 use crate::types::*;
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -30,6 +31,7 @@ mod benchmarking;
 pub use pallet::*;
 pub mod weights;
 
+pub mod appregistry;
 pub mod types;
 
 pub use weights::WeightInfo;
@@ -56,10 +58,10 @@ pub mod pallet {
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config + pallet_timestamp::Config {
-		#[pallet::constant]
 		/// ID of this pallet.
 		///
 		/// Only used to derive the pallets account.
+		#[pallet::constant]
 		type PalletId: Get<PalletId>;
 
 		/// Minimal amount that can be deposited to one FundingID.
@@ -70,7 +72,7 @@ pub mod pallet {
 
 		/// Valid range for the number of participants in a channel.
 		#[pallet::constant]
-		type ParticipantNum: Get<Range<u32>>;
+		type ParticipantNum: Get<Range<ParticipantIndex>>;
 
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
@@ -104,6 +106,9 @@ pub mod pallet {
 
 		/// Weight info for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
+
+		/// App registry.
+		type AppRegistry: AppRegistry;
 	}
 
 	#[pallet::pallet]
@@ -265,6 +270,8 @@ pub mod pallet {
 			Self::validate_fully_signed(&params, &state, state_sigs)?;
 			let channel_id = state.channel_id;
 
+			// AppRegistryFor::validTransition::<T>::();
+
 			let now = Self::now();
 			match <StateRegister<T>>::get(&channel_id) {
 				None => {
@@ -305,6 +312,7 @@ pub mod pallet {
 				}
 			}
 		}
+
 		/// Collaboratively concludes a channel in one step.
 		///
 		/// This function concludes a channel in the case that all participants

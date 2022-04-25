@@ -118,6 +118,7 @@ impl pallet_perun::Config for Test {
 	type HashValue = H256;
 	type Seconds = u64;
 	type WeightInfo = ();
+	type AppRegistry = ();
 }
 
 pub struct IDs {

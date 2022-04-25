@@ -38,6 +38,7 @@ pub type AccountIdOf<T> = <T as frame_system::Config>::AccountId;
 pub type HasherOf<T> = <T as pallet::Config>::Hasher;
 pub type PkOf<T> = <T as pallet::Config>::PK;
 pub type SigOf<T> = <T as pallet::Config>::Signature;
+pub type ParticipantIndex = u32;
 
 pub type ParamsOf<T> = Params<NonceOf<T>, PkOf<T>, SecondsOf<T>>;
 pub type StateOf<T> = State<ChannelIdOf<T>, VersionOf<T>, BalanceOf<T>>;
@@ -46,8 +47,8 @@ pub type WithdrawalOf<T> = Withdrawal<ChannelIdOf<T>, PkOf<T>, AccountIdOf<T>>;
 pub type FundingOf<T> = Funding<ChannelIdOf<T>, PkOf<T>>;
 
 pub type AppId = u64;
-pub type AppData = Vec<u8>;
 pub const NO_APP: AppId = 0;
+pub type AppData = Vec<u8>;
 
 #[derive(Encode, Decode, Default, Clone, PartialEq, RuntimeDebug)]
 #[codec(dumb_trait_bound)]
