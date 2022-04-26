@@ -425,7 +425,7 @@ pub mod pallet {
 						timeout = timeout + params.challenge_duration;
 					}
 					let now = Self::now();
-					ensure!(now > timeout, Error::<T>::ConcludedTooEarly);
+					ensure!(now >= timeout, Error::<T>::ConcludedTooEarly);
 				}
 			} else {
 				ensure!(state.finalized, Error::<T>::StateNotFinal);
