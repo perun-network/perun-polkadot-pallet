@@ -45,6 +45,7 @@ use frame_support::{
 use frame_system::{ensure_signed, pallet_prelude::*};
 use sp_runtime::traits::{AccountIdConversion, CheckedAdd, IdentifyAccount, Verify};
 use sp_std::{cmp, ops::Range, vec::Vec};
+use std::convert::TryFrom;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -142,8 +143,12 @@ pub mod pallet {
 		/// \[channel_id, state\]
 		Disputed(ChannelIdOf<T>, StateOf<T>),
 
+		/// A channel was progressed.
+		/// \[channel_id\]
+		Progressed(ChannelIdOf<T>),
+
 		/// A channel was concluded.
-		/// \[channel_od\]
+		/// \[channel_id\]
 		Concluded(ChannelIdOf<T>),
 
 		/// A participant withdrew funds from a channel.
@@ -174,6 +179,8 @@ pub mod pallet {
 		NotConcluded,
 		// The channel was already concluded but with a different version.
 		ConcludedWithDifferentVersion,
+		/// Operation is only valid in app channel.
+		NoApp,
 
 		/// The desired outcome overflows the Balance type.
 		OutcomeOverflow,
@@ -199,6 +206,8 @@ pub mod pallet {
 		InvalidSignatureNum,
 		/// The number of participants did not respect the configured limits.
 		InvalidParticipantNum,
+		/// The app channel state transition is invalid.
+		InvalidTransition,
 
 		/// The referenced deposit could not be found.
 		UnknownDeposit,
@@ -310,6 +319,66 @@ pub mod pallet {
 					Self::deposit_event(Event::Disputed(channel_id, state));
 					Ok(())
 				}
+			}
+		}
+
+		/// Progresses the state of an app channel without full consensus.
+		///
+		/// Can only be called after successful state registration and if the
+		/// transition conforms with the app logic.
+		///
+		/// Emits an [Event::Progressed] event on success.
+		#[pallet::weight(10_000)] //TODO
+		pub fn progress(
+			origin: OriginFor<T>,
+			params: ParamsOf<T>,
+			next: StateOf<T>,
+			sig: T::Signature,
+			signer: ParticipantIndex,
+		) -> DispatchResult {
+			// Ensure transaction signed by origin.
+			ensure_signed(origin)?;
+
+			// Ensure `next` signed by signer.
+			Self::validate_signed_by(&params, &next, sig, signer)?;
+
+			// Ensure channel has app.
+			ensure!(params.app != NO_APP, Error::<T>::NoApp);
+
+			// Check current state.
+			let channel_id = next.channel_id;
+			match <StateRegister<T>>::get(channel_id) {
+				Some(dispute) => {
+					// Ensure correct phase. Either after registration or before
+					// end of progression.
+					let now = Self::now();
+					ensure!(
+						dispute.phase == Phase::Register && dispute.timeout >= now
+							|| dispute.phase == Phase::Progress && dispute.timeout < now,
+						Error::<T>::WrongPhase,
+					);
+
+					// Require valid transition.
+					let cur = dispute.state;
+					ensure!(
+						T::AppRegistry::valid_transition::<T>(&params, &cur, &next, signer),
+						Error::<T>::InvalidTransition,
+					);
+
+					// Update state register.
+					<StateRegister<T>>::insert(
+						channel_id,
+						RegisteredState {
+							phase: Phase::Progress,
+							state: next,
+							timeout: dispute.timeout + params.challenge_duration,
+						},
+					);
+					Self::deposit_event(Event::Progressed(channel_id));
+
+					Ok(())
+				}
+				None => Err(Error::<T>::UnknownChannel.into()),
 			}
 		}
 
@@ -519,6 +588,31 @@ impl<T: Config> Pallet<T> {
 				Error::<T>::InvalidSignature
 			);
 		}
+		Ok(())
+	}
+
+	fn validate_signed_by(
+		params: &ParamsOf<T>,
+		state: &StateOf<T>,
+		sig: T::Signature,
+		signer: ParticipantIndex,
+	) -> DispatchResult {
+		// Check that the number of participants is valid.
+		ensure!(
+			T::ParticipantNum::get().contains(&signer),
+			Error::<T>::InvalidParticipantNum
+		);
+
+		// Check that the State and Params match.
+		let channel_id = params.channel_id::<T::Hasher>();
+		ensure!(state.channel_id == channel_id, Error::<T>::InvalidChannelId);
+
+		// Check the state signature.
+		let signer_usize = usize::try_from(signer).unwrap();
+		ensure!(
+			state.validate_sig(&sig, &params.participants[signer_usize]),
+			Error::<T>::InvalidSignature
+		);
 		Ok(())
 	}
 }
