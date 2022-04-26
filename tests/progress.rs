@@ -20,6 +20,7 @@ use common::utils::*;
 
 use frame_support::assert_noop;
 use frame_support::{assert_ok};
+use pallet_perun::types::NO_APP;
 
 #[test]
 fn progress() {
@@ -46,10 +47,65 @@ fn progress() {
 	});
 }
 
+#[test]
+fn progress_no_app() {
+	run_test(NO_APP, |setup| {
+		deposit_both(&setup);
+		call_dispute(&setup, false);
+
+		increment_time(setup.params.challenge_duration);
+
+		let mut state = setup.state.clone();
+        state.version += 1;
+        state.data = MOCK_DATA_VALID.to_vec();
+		let sigs = sign_state(&state, &setup);
+
+        let signer = 0;
+        assert_noop!(
+            Perun::progress(
+                Origin::signed(setup.ids.alice),
+                setup.params.clone(),
+                state.clone(),
+                sigs[signer].clone(),
+                signer.try_into().unwrap(),
+	    	),
+            pallet_perun::Error::<Test>::NoApp
+        );
+	});
+}
+
+#[test]
+fn progress_invalid_signature() {
+	run_test(MOCK_APP, |setup| {
+		deposit_both(&setup);
+		call_dispute(&setup, false);
+
+		increment_time(setup.params.challenge_duration);
+
+		let mut state = setup.state.clone();
+        state.version += 1;
+        state.data = MOCK_DATA_VALID.to_vec();
+		let sigs = sign_state(&state, &setup);
+
+        let signer = 0;
+        let not_signer = 1;
+        assert_noop!(
+            Perun::progress(
+                Origin::signed(setup.ids.alice),
+                setup.params.clone(),
+                state.clone(),
+                sigs[signer].clone(),
+                not_signer.try_into().unwrap(),
+	    	),
+            pallet_perun::Error::<Test>::InvalidSignature
+        );
+	});
+}
+
 const MOCK_DATA_INVALID: [u8; 1] = [0];
 
 #[test]
-fn progress_invalid() {
+fn progress_invalid_transition() {
 	run_test(MOCK_APP, |setup| {
 		deposit_both(&setup);
 		call_dispute(&setup, false);
