@@ -13,6 +13,8 @@
 //  limitations under the License.
 
 mod common;
+use std::convert::TryInto;
+
 use common::mock::*;
 use common::utils::*;
 
@@ -172,6 +174,40 @@ fn conclude_dispute() {
 }
 
 #[test]
+fn conclude_progressed() {
+	run_test(|setup| {
+		deposit_both(&setup);
+		call_dispute(&setup, false);
+
+		increment_time(setup.params.challenge_duration);
+
+		let mut state = setup.state.clone();
+        state.version += 1;
+        state.data = MOCK_DATA_VALID.to_vec();
+		let sigs = sign_state(&state, &setup);
+
+        let signer = 0;
+        assert_ok!(Perun::progress(
+			Origin::signed(setup.ids.alice),
+			setup.params.clone(),
+			state.clone(),
+			sigs[signer].clone(),
+            signer.try_into().unwrap(),
+		));
+		event_progressed(state.channel_id);
+
+		increment_time(setup.params.challenge_duration);
+		assert_ok!(Perun::conclude(
+			Origin::signed(setup.ids.alice),
+			setup.params.clone(),
+			state.clone(),
+			sigs
+		));
+		event_concluded(state.channel_id);
+	});
+}
+
+#[test]
 /// The participants try to withdraw more funds than they deposited.
 fn conclude_insufficient_deposits() {
 	run_test(|setup| {
@@ -258,8 +294,12 @@ fn conclude_twice() {
 #[test]
 fn conclude_too_early() {
 	run_test(|setup| {
+		deposit_both(&setup);
 		call_dispute(&setup, false);
-		let sigs = sign_state(&setup.state, &setup);
+		let state = setup.state.clone();
+		let sigs = sign_state(&state, &setup);
+
+		increment_time(setup.params.challenge_duration);
 
 		assert_noop!(
 			Perun::conclude(
