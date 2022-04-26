@@ -107,7 +107,7 @@ pub mod pallet {
 
 		/// Weight info for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
-
+		
 		/// App registry.
 		type AppRegistry: AppRegistry;
 	}
@@ -173,6 +173,12 @@ pub mod pallet {
 
 		/// Operation is invalid in current phase.
 		WrongPhase,
+		/// The operation is potentially valid but too early.
+		TooEarly,
+		/// The operation is not valid anymore.
+		TooLate,
+		/// The operation is invalid because the channel is already concluded.
+		AlreadyConcluded,
 		/// The dispute timeout did not yet elapse.
 		ConcludedTooEarly,
 		/// The channel was not concluded.
@@ -352,11 +358,11 @@ pub mod pallet {
 					// Ensure correct phase. Either after registration or before
 					// end of progression.
 					let now = Self::now();
-					ensure!(
-						dispute.phase == Phase::Register && dispute.timeout >= now
-							|| dispute.phase == Phase::Progress && dispute.timeout < now,
-						Error::<T>::WrongPhase,
-					);
+					match dispute.phase {
+						Phase::Register => ensure!(now >= dispute.timeout, Error::<T>::TooEarly),
+						Phase::Progress => ensure!(now < dispute.timeout, Error::<T>::TooLate),
+						Phase::Conclude => return Err(Error::<T>::AlreadyConcluded.into()),
+					}
 
 					// Require valid transition.
 					let cur = dispute.state;
@@ -597,12 +603,6 @@ impl<T: Config> Pallet<T> {
 		sig: T::Signature,
 		signer: ParticipantIndex,
 	) -> DispatchResult {
-		// Check that the number of participants is valid.
-		ensure!(
-			T::ParticipantNum::get().contains(&signer),
-			Error::<T>::InvalidParticipantNum
-		);
-
 		// Check that the State and Params match.
 		let channel_id = params.channel_id::<T::Hasher>();
 		ensure!(state.channel_id == channel_id, Error::<T>::InvalidChannelId);
