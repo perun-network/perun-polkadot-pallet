@@ -8,14 +8,3 @@ pub trait AppRegistry {
 		signer: ParticipantIndex,
 	) -> bool;
 }
-
-impl AppRegistry for () {
-	fn valid_transition<T: pallet::Config>(
-		_params: &ParamsOf<T>,
-		_from: &StateOf<T>,
-		_to: &StateOf<T>,
-		_signer: ParticipantIndex,
-	) -> bool {
-		return false;
-	}
-}

@@ -17,7 +17,7 @@ use pallet_balances;
 use super::utils::increment_time;
 
 use frame_support::{parameter_types, PalletId};
-use pallet_perun::types::{BalanceOf, FundingIdOf, HasherOf, ParamsOf, StateOf, NO_APP};
+use pallet_perun::{types::{BalanceOf, FundingIdOf, HasherOf, ParamsOf, StateOf, NO_APP, AppId, ParticipantIndex}, appregistry::AppRegistry};
 use sp_core::{crypto::*, H256};
 use sp_runtime::{
 	testing::Header,
@@ -118,7 +118,7 @@ impl pallet_perun::Config for Test {
 	type HashValue = H256;
 	type Seconds = u64;
 	type WeightInfo = ();
-	type AppRegistry = ();
+	type AppRegistry = MockRegistry;
 }
 
 pub struct IDs {
@@ -148,6 +148,22 @@ pub struct Setup {
 	pub params: ParamsOf<Test>,
 }
 
+const MOCK_APP: AppId = NO_APP + 1;
+pub const MOCK_DATA_VALID: [u8; 1] = [1];
+
+pub struct MockRegistry {}
+
+impl AppRegistry for MockRegistry {
+	fn valid_transition<T: pallet_perun::Config>(
+		_params: &ParamsOf<T>,
+		_from: &StateOf<T>,
+		to: &StateOf<T>,
+		_signer: ParticipantIndex,
+	) -> bool {
+		return to.data == MOCK_DATA_VALID;
+	}
+}
+
 /// Creates a new `Setup` struct.
 pub fn new_setup() -> Setup {
 	let keys = [
@@ -162,7 +178,7 @@ pub fn new_setup() -> Setup {
 		],
 		participants: vec![keys[0].public(), keys[1].public()],
 		challenge_duration: 10,
-		app: NO_APP,
+		app: MOCK_APP,
 	};
 	let cid = params.channel_id::<HasherOf<Test>>();
 
