@@ -19,11 +19,12 @@ use common::mock::*;
 use common::utils::*;
 
 use frame_support::{assert_noop, assert_ok};
+use pallet_perun::types::NO_APP;
 use pallet_perun::types::NonceOf;
 
 #[test]
 fn conclude_ok() {
-	run_test(|setup| {
+	run_test(MOCK_APP, |setup| {
 		let mut state = setup.state.clone();
 		state.finalized = true;
 		// Set the balances to 0 so it does not fail bc of missing deposits.
@@ -42,7 +43,7 @@ fn conclude_ok() {
 
 #[test]
 fn conclude_not_final() {
-	run_test(|setup| {
+	run_test(MOCK_APP, |setup| {
 		let sigs = sign_state(&setup.state, &setup);
 
 		assert_noop!(
@@ -61,7 +62,7 @@ fn conclude_not_final() {
 
 #[test]
 fn conclude_invalid_part_num() {
-	run_test(|setup| {
+	run_test(MOCK_APP, |setup| {
 		let mut state = setup.state.clone();
 		state.finalized = true;
 		let bad_sigs = vec![
@@ -84,7 +85,7 @@ fn conclude_invalid_part_num() {
 
 #[test]
 fn conclude_invalid_sig_nums() {
-	run_test(|setup| {
+	run_test(MOCK_APP, |setup| {
 		let mut state = setup.state.clone();
 		state.finalized = true;
 		let sigs = sign_state(&setup.state, &setup);
@@ -109,7 +110,7 @@ fn conclude_invalid_sig_nums() {
 
 #[test]
 fn conclude_invalid_sig() {
-	run_test(|setup| {
+	run_test(MOCK_APP, |setup| {
 		let mut state = setup.state.clone();
 		let sigs_bad = sign_state(&state, &setup);
 		state.finalized = true;
@@ -138,7 +139,7 @@ fn conclude_invalid_sig() {
 
 #[test]
 fn conclude_invalid_channel_id() {
-	run_test(|setup| {
+	run_test(MOCK_APP, |setup| {
 		let mut state = setup.state.clone();
 		state.finalized = true;
 		let sigs = sign_state(&state, &setup);
@@ -156,7 +157,7 @@ fn conclude_invalid_channel_id() {
 
 #[test]
 fn conclude_dispute() {
-	run_test(|setup| {
+	run_test(MOCK_APP, |setup| {
 		deposit_both(&setup);
 		call_dispute(&setup, false);
 		let state = setup.state.clone();
@@ -175,7 +176,7 @@ fn conclude_dispute() {
 
 #[test]
 fn conclude_progressed() {
-	run_test(|setup| {
+	run_test(MOCK_APP, |setup| {
 		deposit_both(&setup);
 		call_dispute(&setup, false);
 
@@ -210,7 +211,7 @@ fn conclude_progressed() {
 #[test]
 /// The participants try to withdraw more funds than they deposited.
 fn conclude_insufficient_deposits() {
-	run_test(|setup| {
+	run_test(MOCK_APP, |setup| {
 		let mut state = setup.state.clone();
 		state.finalized = true;
 		// Alice and Bob deposit.
@@ -234,7 +235,7 @@ fn conclude_insufficient_deposits() {
 
 #[test]
 fn conclude_already_concluded_different_version() {
-	run_test(|setup| {
+	run_test(MOCK_APP, |setup| {
 		deposit_both(&setup);
 		call_dispute(&setup, false);
 		let mut state = setup.state.clone();
@@ -265,7 +266,7 @@ fn conclude_already_concluded_different_version() {
 
 #[test]
 fn conclude_twice() {
-	run_test(|setup| {
+	run_test(MOCK_APP, |setup| {
 		deposit_both(&setup);
 		call_dispute(&setup, false);
 		let mut state = setup.state.clone();
@@ -293,13 +294,35 @@ fn conclude_twice() {
 
 #[test]
 fn conclude_too_early() {
-	run_test(|setup| {
+	run_test(MOCK_APP, |setup| {
 		deposit_both(&setup);
 		call_dispute(&setup, false);
 		let state = setup.state.clone();
 		let sigs = sign_state(&state, &setup);
 
 		increment_time(setup.params.challenge_duration);
+
+		assert_noop!(
+			Perun::conclude(
+				Origin::signed(setup.ids.alice),
+				setup.params.clone(),
+				setup.state.clone(),
+				sigs
+			),
+			pallet_perun::Error::<Test>::ConcludedTooEarly
+		);
+	});
+}
+
+#[test]
+fn conclude_too_early_no_app() {
+	run_test(NO_APP, |setup| {
+		deposit_both(&setup);
+		call_dispute(&setup, false);
+		let state = setup.state.clone();
+		let sigs = sign_state(&state, &setup);
+
+		increment_time(setup.params.challenge_duration/2);
 
 		assert_noop!(
 			Perun::conclude(

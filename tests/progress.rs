@@ -23,7 +23,7 @@ use frame_support::{assert_ok};
 
 #[test]
 fn progress() {
-	run_test(|setup| {
+	run_test(MOCK_APP, |setup| {
 		deposit_both(&setup);
 		call_dispute(&setup, false);
 
@@ -50,7 +50,7 @@ const MOCK_DATA_INVALID: [u8; 1] = [0];
 
 #[test]
 fn progress_invalid() {
-	run_test(|setup| {
+	run_test(MOCK_APP, |setup| {
 		deposit_both(&setup);
 		call_dispute(&setup, false);
 
@@ -77,7 +77,7 @@ fn progress_invalid() {
 
 #[test]
 fn progress_too_early() {
-	run_test(|setup| {
+	run_test(MOCK_APP, |setup| {
 		deposit_both(&setup);
 		call_dispute(&setup, false);
 
@@ -104,7 +104,7 @@ fn progress_too_early() {
 
 #[test]
 fn progress_too_late() {
-	run_test(|setup| {
+	run_test(MOCK_APP, |setup| {
 		deposit_both(&setup);
 		call_dispute(&setup, false);
 
@@ -144,7 +144,7 @@ fn progress_too_late() {
 
 #[test]
 fn progress_already_concluded() {
-	run_test(|setup| {
+	run_test(MOCK_APP, |setup| {
 		deposit_both(&setup);
 		call_dispute(&setup, false);
 

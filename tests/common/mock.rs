@@ -148,7 +148,7 @@ pub struct Setup {
 	pub params: ParamsOf<Test>,
 }
 
-const MOCK_APP: AppId = NO_APP + 1;
+pub const MOCK_APP: AppId = NO_APP + 1;
 pub const MOCK_DATA_VALID: [u8; 1] = [1];
 
 pub struct MockRegistry {}
@@ -165,7 +165,7 @@ impl AppRegistry for MockRegistry {
 }
 
 /// Creates a new `Setup` struct.
-pub fn new_setup() -> Setup {
+pub fn new_setup(app: AppId) -> Setup {
 	let keys = [
 		sp_core::ecdsa::Pair::from_string("//Alice///password", None).unwrap(),
 		sp_core::ecdsa::Pair::from_string("//Bob///password2", None).unwrap(),
@@ -178,7 +178,7 @@ pub fn new_setup() -> Setup {
 		],
 		participants: vec![keys[0].public(), keys[1].public()],
 		challenge_duration: 10,
-		app: MOCK_APP,
+		app,
 	};
 	let cid = params.channel_id::<HasherOf<Test>>();
 
@@ -212,8 +212,8 @@ pub fn new_setup() -> Setup {
 
 /// This function builds a genesis block and a setup.
 /// The Setup is passed to `test`.
-pub fn run_test(test: fn(&Setup) -> ()) {
-	let setup = new_setup();
+pub fn run_test(app: AppId, test: fn(&Setup) -> ()) {
+	let setup = new_setup(app);
 	let mut ext: sp_io::TestExternalities = GenesisConfig {
 		// We use default for brevity, but you can configure as desired if needed.
 		system: Default::default(),

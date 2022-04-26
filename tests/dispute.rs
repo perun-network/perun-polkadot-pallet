@@ -21,7 +21,7 @@ use pallet_perun::types::{ChannelIdOf, HasherOf, NonceOf, SecondsOf};
 
 #[test]
 fn dispute_ok() {
-	run_test(|setup| {
+	run_test(MOCK_APP, |setup| {
 		let sigs = sign_state(&setup.state, &setup);
 
 		assert_ok!(Perun::dispute(
@@ -37,7 +37,7 @@ fn dispute_ok() {
 
 #[test]
 fn dispute_final() {
-	run_test(|setup| {
+	run_test(MOCK_APP, |setup| {
 		let mut state = setup.state.clone();
 		state.finalized = true;
 		let sigs = sign_state(&state, &setup);
@@ -57,7 +57,7 @@ fn dispute_final() {
 
 #[test]
 fn dispute_already_concluded() {
-	run_test(|setup| {
+	run_test(MOCK_APP, |setup| {
 		deposit_both(&setup);
 		call_dispute(&setup, false);
 		let mut state = setup.state.clone();
@@ -86,7 +86,7 @@ fn dispute_already_concluded() {
 
 #[test]
 fn dispute_challenge_duration_overflow() {
-	run_test(|setup| {
+	run_test(MOCK_APP, |setup| {
 		let mut params = setup.params.clone();
 		let mut state = setup.state.clone();
 		params.challenge_duration = SecondsOf::<Test>::MAX;
@@ -104,7 +104,7 @@ fn dispute_challenge_duration_overflow() {
 
 #[test]
 fn dispute_invalid_part_num() {
-	run_test(|setup| {
+	run_test(MOCK_APP, |setup| {
 		let bad_sigs = vec![
 			vec![], // No parts
 		];
@@ -125,7 +125,7 @@ fn dispute_invalid_part_num() {
 
 #[test]
 fn dispute_invalid_sig_nums() {
-	run_test(|setup| {
+	run_test(MOCK_APP, |setup| {
 		let sigs = sign_state(&setup.state, &setup);
 		let bad_sigs = vec![
 			vec![sigs[0].clone()],                                   // One sig
@@ -148,7 +148,7 @@ fn dispute_invalid_sig_nums() {
 
 #[test]
 fn dispute_invalid_sig() {
-	run_test(|setup| {
+	run_test(MOCK_APP, |setup| {
 		let mut state = setup.state.clone();
 		let sigs_good = sign_state(&state, &setup);
 		state.version += 1;
@@ -176,7 +176,7 @@ fn dispute_invalid_sig() {
 
 #[test]
 fn dispute_invalid_channel_id() {
-	run_test(|setup| {
+	run_test(MOCK_APP, |setup| {
 		let sigs = sign_state(&setup.state, &setup);
 		let mut params = setup.params.clone();
 		params.nonce = NonceOf::<Test>::default();
@@ -193,7 +193,7 @@ fn dispute_invalid_channel_id() {
 		);
 		assert_no_events();
 	});
-	run_test(|setup| {
+	run_test(MOCK_APP, |setup| {
 		let sigs = sign_state(&setup.state, &setup);
 		let mut params = setup.params.clone();
 		params.participants = vec![];
@@ -210,7 +210,7 @@ fn dispute_invalid_channel_id() {
 		);
 		assert_no_events();
 	});
-	run_test(|setup| {
+	run_test(MOCK_APP, |setup| {
 		let sigs = sign_state(&setup.state, &setup);
 		let mut params = setup.params.clone();
 		params.challenge_duration = setup.params.challenge_duration + 1;
@@ -227,7 +227,7 @@ fn dispute_invalid_channel_id() {
 		);
 		assert_no_events();
 	});
-	run_test(|setup| {
+	run_test(MOCK_APP, |setup| {
 		let sigs = sign_state(&setup.state, &setup);
 		let mut state = setup.state.clone();
 		state.channel_id = ChannelIdOf::<Test>::default();
@@ -248,7 +248,7 @@ fn dispute_invalid_channel_id() {
 
 #[test]
 fn dispute_same_version() {
-	run_test(|setup| {
+	run_test(MOCK_APP, |setup| {
 		// Dispute normal
 		call_dispute(&setup, false);
 
@@ -270,7 +270,7 @@ fn dispute_same_version() {
 
 #[test]
 fn dispute_higher_version() {
-	run_test(|setup| {
+	run_test(MOCK_APP, |setup| {
 		// Dispute normal
 		call_dispute(&setup, false);
 
@@ -293,7 +293,7 @@ fn dispute_higher_version() {
 
 #[test]
 fn dispute_timeout() {
-	run_test(|setup| {
+	run_test(MOCK_APP, |setup| {
 		// Dispute once
 		call_dispute(&setup, false);
 
