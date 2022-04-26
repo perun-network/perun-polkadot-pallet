@@ -40,6 +40,14 @@ pub fn event_disputed(channel_id: ChannelIdOf<Test>, state: StateOf<Test>) {
 	);
 }
 
+/// Checks that the last event was a `Progressed` event with the given args.
+pub fn event_progressed(channel_id: ChannelIdOf<Test>) {
+	assert_eq!(
+		last_event(),
+		Event::Perun(pallet_perun::Event::Progressed(channel_id))
+	);
+}
+
 /// Checks that the last event was a `Concluded` event with the given args.
 pub fn event_concluded(channel_id: ChannelIdOf<Test>) {
 	assert_eq!(
