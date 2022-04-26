@@ -157,10 +157,10 @@ fn conclude_dispute() {
 	run_test(|setup| {
 		deposit_both(&setup);
 		call_dispute(&setup, false);
-		let mut state = setup.state.clone();
-		state.finalized = true;
+		let state = setup.state.clone();
 		let sigs = sign_state(&state, &setup);
 
+		increment_time(2*setup.params.challenge_duration);
 		assert_ok!(Perun::conclude(
 			Origin::signed(setup.ids.alice),
 			setup.params.clone(),
