@@ -153,6 +153,7 @@ where
 		nonce: [0u8; 32].into(),
 		participants: parts,
 		challenge_duration: 0u64.into(),
+		app: NO_APP,
 	}
 }
 
@@ -170,6 +171,7 @@ where
 		version: 0u32.into(),
 		balances: bals,
 		finalized: is_final,
+		data: vec![],
 	}
 }
 
