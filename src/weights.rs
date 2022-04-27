@@ -35,10 +35,14 @@
 use frame_support::{traits::Get, weights::{Weight, constants::RocksDbWeight}};
 use sp_std::marker::PhantomData;
 
+use crate::{types::ParamsOf, Config};
+use crate::appregistry::AppRegistry;
+
 /// Weight functions needed for pallet_perun.
 pub trait WeightInfo {
 	fn deposit() -> Weight;
 	fn dispute(p: u32, ) -> Weight;
+	fn progress<T: Config>(params: &ParamsOf<T>) -> Weight;
 	fn conclude(p: u32, ) -> Weight;
 	fn withdraw() -> Weight;
 }
@@ -61,6 +65,10 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add((87_897_000 as Weight).saturating_mul(p as Weight))
 			.saturating_add(T::DbWeight::get().reads(2 as Weight))
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
+	}
+	//TODO: benchmark weight and replace constant
+	fn progress<U: Config>(params: &ParamsOf<U>) -> Weight {
+		return 10_000 + U::AppRegistry::transition_weight::<U>(params);
 	}
 	// Storage: PerunModule StateRegister (r:1 w:1)
 	// Storage: PerunModule Deposits (r:2 w:2)
@@ -100,6 +108,10 @@ impl WeightInfo for () {
 			.saturating_add((87_897_000 as Weight).saturating_mul(p as Weight))
 			.saturating_add(RocksDbWeight::get().reads(2 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
+	}
+	//TODO: benchmark weight and replace constant
+	fn progress<U: Config>(params: &ParamsOf<U>) -> Weight {
+		return 10_000 + U::AppRegistry::transition_weight::<U>(params);
 	}
 	// Storage: PerunModule StateRegister (r:1 w:1)
 	// Storage: PerunModule Deposits (r:2 w:2)

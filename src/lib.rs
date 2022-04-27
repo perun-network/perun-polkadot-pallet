@@ -334,7 +334,7 @@ pub mod pallet {
 		/// transition conforms with the app logic.
 		///
 		/// Emits an [Event::Progressed] event on success.
-		#[pallet::weight(10_000)] //TODO
+		#[pallet::weight(WeightInfoOf::<T>::progress::<T>(params))]
 		pub fn progress(
 			origin: OriginFor<T>,
 			params: ParamsOf<T>,

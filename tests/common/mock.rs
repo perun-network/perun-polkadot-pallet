@@ -16,7 +16,7 @@ use pallet_balances;
 
 use super::utils::increment_time;
 
-use frame_support::{parameter_types, PalletId};
+use frame_support::{parameter_types, PalletId, dispatch::Weight};
 use pallet_perun::{types::{BalanceOf, FundingIdOf, HasherOf, ParamsOf, StateOf, NO_APP, AppId, ParticipantIndex}, appregistry::AppRegistry};
 use sp_core::{crypto::*, H256};
 use sp_runtime::{
@@ -155,12 +155,24 @@ pub struct MockRegistry {}
 
 impl AppRegistry for MockRegistry {
 	fn valid_transition<T: pallet_perun::Config>(
-		_params: &ParamsOf<T>,
+		params: &ParamsOf<T>,
 		_from: &StateOf<T>,
 		to: &StateOf<T>,
 		_signer: ParticipantIndex,
 	) -> bool {
-		return to.data == MOCK_DATA_VALID;
+		match params.app {
+			MOCK_APP => return to.data == MOCK_DATA_VALID,
+			_ => return false,
+		}
+	}
+
+	fn transition_weight<T: pallet_perun::Config>(
+		params: &ParamsOf<T>,
+	) -> Weight {
+		match params.app {
+			MOCK_APP => return 10_000,
+			_ => return 0,
+		}
 	}
 }
 
