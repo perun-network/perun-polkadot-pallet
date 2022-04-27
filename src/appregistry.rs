@@ -8,7 +8,5 @@ pub trait AppRegistry {
 		signer: ParticipantIndex,
 	) -> bool;
 
-	fn transition_weight<T: pallet::Config>(
-		params: &ParamsOf<T>,
-	) -> Weight;
+	fn transition_weight<T: pallet::Config>(params: &ParamsOf<T>) -> Weight;
 }

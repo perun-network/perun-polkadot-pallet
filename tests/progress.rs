@@ -19,7 +19,7 @@ use common::mock::*;
 use common::utils::*;
 
 use frame_support::assert_noop;
-use frame_support::{assert_ok};
+use frame_support::assert_ok;
 use pallet_perun::types::NO_APP;
 
 #[test]
@@ -31,17 +31,17 @@ fn progress() {
 		increment_time(setup.params.challenge_duration);
 
 		let mut state = setup.state.clone();
-        state.version += 1;
-        state.data = MOCK_DATA_VALID.to_vec();
+		state.version += 1;
+		state.data = MOCK_DATA_VALID.to_vec();
 		let sigs = sign_state(&state, &setup);
 
-        let signer = 0;
-        assert_ok!(Perun::progress(
+		let signer = 0;
+		assert_ok!(Perun::progress(
 			Origin::signed(setup.ids.alice),
 			setup.params.clone(),
 			state.clone(),
 			sigs[signer].clone(),
-            signer.try_into().unwrap(),
+			signer.try_into().unwrap(),
 		));
 		event_progressed(state.channel_id);
 	});
@@ -56,21 +56,21 @@ fn progress_no_app() {
 		increment_time(setup.params.challenge_duration);
 
 		let mut state = setup.state.clone();
-        state.version += 1;
-        state.data = MOCK_DATA_VALID.to_vec();
+		state.version += 1;
+		state.data = MOCK_DATA_VALID.to_vec();
 		let sigs = sign_state(&state, &setup);
 
-        let signer = 0;
-        assert_noop!(
-            Perun::progress(
-                Origin::signed(setup.ids.alice),
-                setup.params.clone(),
-                state.clone(),
-                sigs[signer].clone(),
-                signer.try_into().unwrap(),
-	    	),
-            pallet_perun::Error::<Test>::NoApp
-        );
+		let signer = 0;
+		assert_noop!(
+			Perun::progress(
+				Origin::signed(setup.ids.alice),
+				setup.params.clone(),
+				state.clone(),
+				sigs[signer].clone(),
+				signer.try_into().unwrap(),
+			),
+			pallet_perun::Error::<Test>::NoApp
+		);
 	});
 }
 
@@ -83,22 +83,22 @@ fn progress_invalid_signature() {
 		increment_time(setup.params.challenge_duration);
 
 		let mut state = setup.state.clone();
-        state.version += 1;
-        state.data = MOCK_DATA_VALID.to_vec();
+		state.version += 1;
+		state.data = MOCK_DATA_VALID.to_vec();
 		let sigs = sign_state(&state, &setup);
 
-        let signer = 0;
-        let not_signer = 1;
-        assert_noop!(
-            Perun::progress(
-                Origin::signed(setup.ids.alice),
-                setup.params.clone(),
-                state.clone(),
-                sigs[signer].clone(),
-                not_signer.try_into().unwrap(),
-	    	),
-            pallet_perun::Error::<Test>::InvalidSignature
-        );
+		let signer = 0;
+		let not_signer = 1;
+		assert_noop!(
+			Perun::progress(
+				Origin::signed(setup.ids.alice),
+				setup.params.clone(),
+				state.clone(),
+				sigs[signer].clone(),
+				not_signer.try_into().unwrap(),
+			),
+			pallet_perun::Error::<Test>::InvalidSignature
+		);
 	});
 }
 
@@ -113,21 +113,21 @@ fn progress_invalid_transition() {
 		increment_time(setup.params.challenge_duration);
 
 		let mut state = setup.state.clone();
-        state.version += 1;
-        state.data = MOCK_DATA_INVALID.to_vec();
+		state.version += 1;
+		state.data = MOCK_DATA_INVALID.to_vec();
 		let sigs = sign_state(&state, &setup);
 
-        let signer = 0;
-        assert_noop!(
-            Perun::progress(
-                Origin::signed(setup.ids.alice),
-                setup.params.clone(),
-                state.clone(),
-                sigs[signer].clone(),
-                signer.try_into().unwrap(),
-	    	),
-            pallet_perun::Error::<Test>::InvalidTransition
-        );
+		let signer = 0;
+		assert_noop!(
+			Perun::progress(
+				Origin::signed(setup.ids.alice),
+				setup.params.clone(),
+				state.clone(),
+				sigs[signer].clone(),
+				signer.try_into().unwrap(),
+			),
+			pallet_perun::Error::<Test>::InvalidTransition
+		);
 	});
 }
 
@@ -137,24 +137,24 @@ fn progress_too_early() {
 		deposit_both(&setup);
 		call_dispute(&setup, false);
 
-		increment_time(setup.params.challenge_duration/2);
+		increment_time(setup.params.challenge_duration / 2);
 
 		let mut state = setup.state.clone();
-        state.version += 1;
-        state.data = MOCK_DATA_VALID.to_vec();
+		state.version += 1;
+		state.data = MOCK_DATA_VALID.to_vec();
 		let sigs = sign_state(&state, &setup);
 
-        let signer = 0;
-        assert_noop!(
-            Perun::progress(
-                Origin::signed(setup.ids.alice),
-                setup.params.clone(),
-                state.clone(),
-                sigs[signer].clone(),
-                signer.try_into().unwrap(),
-		    ),
-            pallet_perun::Error::<Test>::TooEarly
-        );
+		let signer = 0;
+		assert_noop!(
+			Perun::progress(
+				Origin::signed(setup.ids.alice),
+				setup.params.clone(),
+				state.clone(),
+				sigs[signer].clone(),
+				signer.try_into().unwrap(),
+			),
+			pallet_perun::Error::<Test>::TooEarly
+		);
 	});
 }
 
@@ -167,34 +167,34 @@ fn progress_too_late() {
 		increment_time(setup.params.challenge_duration);
 
 		let mut state = setup.state.clone();
-        state.version += 1;
-        state.data = MOCK_DATA_VALID.to_vec();
+		state.version += 1;
+		state.data = MOCK_DATA_VALID.to_vec();
 		let sigs = sign_state(&state, &setup);
-        let signer = 0;
+		let signer = 0;
 
-        assert_ok!(Perun::progress(
+		assert_ok!(Perun::progress(
 			Origin::signed(setup.ids.alice),
 			setup.params.clone(),
 			state.clone(),
 			sigs[signer].clone(),
-            signer.try_into().unwrap(),
+			signer.try_into().unwrap(),
 		));
 		event_progressed(state.channel_id);
 
-        increment_time(setup.params.challenge_duration);
+		increment_time(setup.params.challenge_duration);
 
-        state.version += 1;
+		state.version += 1;
 		let sigs = sign_state(&state, &setup);
-        assert_noop!(
-            Perun::progress(
-                Origin::signed(setup.ids.alice),
-                setup.params.clone(),
-                state.clone(),
-                sigs[signer].clone(),
-                signer.try_into().unwrap(),
-	    	),
-            pallet_perun::Error::<Test>::TooLate
-        );
+		assert_noop!(
+			Perun::progress(
+				Origin::signed(setup.ids.alice),
+				setup.params.clone(),
+				state.clone(),
+				sigs[signer].clone(),
+				signer.try_into().unwrap(),
+			),
+			pallet_perun::Error::<Test>::TooLate
+		);
 	});
 }
 
@@ -207,21 +207,21 @@ fn progress_already_concluded() {
 		increment_time(setup.params.challenge_duration);
 
 		let mut state = setup.state.clone();
-        state.version += 1;
-        state.data = MOCK_DATA_VALID.to_vec();
+		state.version += 1;
+		state.data = MOCK_DATA_VALID.to_vec();
 		let sigs = sign_state(&state, &setup);
-        let signer = 0;
+		let signer = 0;
 
-        assert_ok!(Perun::progress(
+		assert_ok!(Perun::progress(
 			Origin::signed(setup.ids.alice),
 			setup.params.clone(),
 			state.clone(),
 			sigs[signer].clone(),
-            signer.try_into().unwrap(),
+			signer.try_into().unwrap(),
 		));
 		event_progressed(state.channel_id);
 
-        increment_time(setup.params.challenge_duration);
+		increment_time(setup.params.challenge_duration);
 
 		assert_ok!(Perun::conclude(
 			Origin::signed(setup.ids.alice),
@@ -231,17 +231,17 @@ fn progress_already_concluded() {
 		));
 		event_concluded(state.channel_id);
 
-        state.version += 1;
+		state.version += 1;
 		let sigs = sign_state(&state, &setup);
-        assert_noop!(
-            Perun::progress(
-                Origin::signed(setup.ids.alice),
-                setup.params.clone(),
-                state.clone(),
-                sigs[signer].clone(),
-                signer.try_into().unwrap(),
-	    	),
-            pallet_perun::Error::<Test>::AlreadyConcluded
-        );
+		assert_noop!(
+			Perun::progress(
+				Origin::signed(setup.ids.alice),
+				setup.params.clone(),
+				state.clone(),
+				sigs[signer].clone(),
+				signer.try_into().unwrap(),
+			),
+			pallet_perun::Error::<Test>::AlreadyConcluded
+		);
 	});
 }

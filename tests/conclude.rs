@@ -19,8 +19,8 @@ use common::mock::*;
 use common::utils::*;
 
 use frame_support::{assert_noop, assert_ok};
-use pallet_perun::types::NO_APP;
 use pallet_perun::types::NonceOf;
+use pallet_perun::types::NO_APP;
 
 #[test]
 fn conclude_ok() {
@@ -163,7 +163,7 @@ fn conclude_dispute() {
 		let state = setup.state.clone();
 		let sigs = sign_state(&state, &setup);
 
-		increment_time(2*setup.params.challenge_duration);
+		increment_time(2 * setup.params.challenge_duration);
 		assert_ok!(Perun::conclude(
 			Origin::signed(setup.ids.alice),
 			setup.params.clone(),
@@ -183,17 +183,17 @@ fn conclude_progressed() {
 		increment_time(setup.params.challenge_duration);
 
 		let mut state = setup.state.clone();
-        state.version += 1;
-        state.data = MOCK_DATA_VALID.to_vec();
+		state.version += 1;
+		state.data = MOCK_DATA_VALID.to_vec();
 		let sigs = sign_state(&state, &setup);
 
-        let signer = 0;
-        assert_ok!(Perun::progress(
+		let signer = 0;
+		assert_ok!(Perun::progress(
 			Origin::signed(setup.ids.alice),
 			setup.params.clone(),
 			state.clone(),
 			sigs[signer].clone(),
-            signer.try_into().unwrap(),
+			signer.try_into().unwrap(),
 		));
 		event_progressed(state.channel_id);
 
@@ -322,7 +322,7 @@ fn conclude_too_early_no_app() {
 		let state = setup.state.clone();
 		let sigs = sign_state(&state, &setup);
 
-		increment_time(setup.params.challenge_duration/2);
+		increment_time(setup.params.challenge_duration / 2);
 
 		assert_noop!(
 			Perun::conclude(

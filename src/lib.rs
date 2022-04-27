@@ -107,7 +107,7 @@ pub mod pallet {
 
 		/// Weight info for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
-		
+
 		/// App registry.
 		type AppRegistry: AppRegistry;
 	}
