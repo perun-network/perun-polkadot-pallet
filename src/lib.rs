@@ -44,8 +44,7 @@ use frame_support::{
 };
 use frame_system::{ensure_signed, pallet_prelude::*};
 use sp_runtime::traits::{AccountIdConversion, CheckedAdd, IdentifyAccount, Verify};
-use sp_std::{cmp, ops::Range, vec::Vec};
-use std::convert::TryFrom;
+use sp_std::{cmp, convert::TryFrom, ops::Range, vec::Vec};
 
 #[frame_support::pallet]
 pub mod pallet {
