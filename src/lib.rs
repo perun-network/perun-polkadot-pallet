@@ -23,7 +23,6 @@
 // Error on broken doc links.
 #![deny(rustdoc::broken_intra_doc_links)]
 
-use crate::appregistry::*;
 use crate::types::*;
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -31,7 +30,6 @@ mod benchmarking;
 pub use pallet::*;
 pub mod weights;
 
-pub mod appregistry;
 pub mod types;
 
 pub use weights::WeightInfo;

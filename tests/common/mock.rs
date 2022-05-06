@@ -17,9 +17,9 @@ use pallet_balances;
 use super::utils::increment_time;
 
 use frame_support::{dispatch::Weight, parameter_types, PalletId};
-use pallet_perun::{
-	appregistry::AppRegistry,
-	types::{AppId, BalanceOf, FundingIdOf, HasherOf, ParamsOf, ParticipantIndex, StateOf, NO_APP},
+use pallet_perun::types::{
+	AppId, AppRegistry, BalanceOf, FundingIdOf, HasherOf, ParamsOf, ParticipantIndex, StateOf,
+	NO_APP,
 };
 use sp_core::{crypto::*, H256};
 use sp_runtime::{

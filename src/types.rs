@@ -50,6 +50,17 @@ pub type AppId = u64;
 pub const NO_APP: AppId = 0;
 pub type AppData = Vec<u8>;
 
+pub trait AppRegistry {
+	fn valid_transition<T: pallet::Config>(
+		params: &ParamsOf<T>,
+		from: &StateOf<T>,
+		to: &StateOf<T>,
+		signer: ParticipantIndex,
+	) -> bool;
+
+	fn transition_weight<T: pallet::Config>(params: &ParamsOf<T>) -> Weight;
+}
+
 #[derive(Encode, Decode, Default, Clone, PartialEq, RuntimeDebug)]
 #[codec(dumb_trait_bound)]
 /// Fixed parameters of a channel.

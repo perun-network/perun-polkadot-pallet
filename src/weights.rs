@@ -35,8 +35,7 @@
 use frame_support::{traits::Get, weights::{Weight, constants::RocksDbWeight}};
 use sp_std::marker::PhantomData;
 
-use crate::{types::ParamsOf, Config};
-use crate::appregistry::AppRegistry;
+use crate::{types::{ParamsOf, AppRegistry}, Config};
 
 /// Weight functions needed for pallet_perun.
 pub trait WeightInfo {
