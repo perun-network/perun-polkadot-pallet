@@ -111,3 +111,7 @@ Use of the source code is governed by the Apache 2.0 license that can be found i
 [dispute.rs]: tests/dispute.rs
 [withdraw.rs]: tests/withdraw.rs
 [Cargo.toml]: Cargo.toml
+
+## TODO
+
+- Store hash of state instead of full state.
