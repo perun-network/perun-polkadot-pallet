@@ -142,7 +142,7 @@ pub mod pallet {
 
 		/// A channel was progressed.
 		/// \[channel_id\]
-		Progressed(ChannelIdOf<T>),
+		Progressed(ChannelIdOf<T>, VersionOf<T>),
 
 		/// A channel was concluded.
 		/// \[channel_id\]
@@ -373,11 +373,11 @@ pub mod pallet {
 						channel_id,
 						RegisteredState {
 							phase: Phase::Progress,
-							state: next,
+							state: next.clone(),
 							timeout: dispute.timeout + params.challenge_duration,
 						},
 					);
-					Self::deposit_event(Event::Progressed(channel_id));
+					Self::deposit_event(Event::Progressed(channel_id, next.version));
 
 					Ok(())
 				}

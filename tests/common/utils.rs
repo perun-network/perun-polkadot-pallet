@@ -21,7 +21,9 @@ use frame_support::{
 	assert_ok,
 	traits::{OnFinalize, OnInitialize},
 };
-use pallet_perun::types::{ChannelIdOf, FundingIdOf, SecondsOf, SigOf, StateOf, WithdrawalOf};
+use pallet_perun::types::{
+	ChannelIdOf, FundingIdOf, SecondsOf, SigOf, StateOf, VersionOf, WithdrawalOf,
+};
 use sp_core::{crypto::*, H256};
 
 /// Checks that the last event was a `Deposited` event with the given args.
@@ -41,10 +43,10 @@ pub fn event_disputed(channel_id: ChannelIdOf<Test>, state: StateOf<Test>) {
 }
 
 /// Checks that the last event was a `Progressed` event with the given args.
-pub fn event_progressed(channel_id: ChannelIdOf<Test>) {
+pub fn event_progressed(channel_id: ChannelIdOf<Test>, version: VersionOf<Test>) {
 	assert_eq!(
 		last_event(),
-		Event::Perun(pallet_perun::Event::Progressed(channel_id))
+		Event::Perun(pallet_perun::Event::Progressed(channel_id, version))
 	);
 }
 
