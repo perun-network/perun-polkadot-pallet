@@ -97,7 +97,7 @@ pub mod pallet {
 		/// Must be possible to verify that a [Config::PK] created a signature.
 		type Signature: Encode + Decode + Member + Verify<Signer = Self::PK>;
 		/// PK of a [Config::Signature].
-		type PK: Encode + Decode + Member + IdentifyAccount<AccountId = Self::PK>;
+		type PK: Encode + Decode + Member + IdentifyAccount<AccountId = Self::PK> + PartialEq;
 
 		/// Represent a time duration in seconds.
 		type Seconds: FullCodec + Member + CheckedAdd + PartialOrd + From<u64>;
@@ -105,8 +105,12 @@ pub mod pallet {
 		/// Weight info for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
 
+		type AppId: AppId;
+		#[pallet::constant]
+		type NoApp: Get<Self::AppId>;
+
 		/// App registry.
-		type AppRegistry: AppRegistry;
+		type AppRegistry: AppRegistry<Self>;
 	}
 
 	#[pallet::pallet]
@@ -344,7 +348,7 @@ pub mod pallet {
 			Self::validate_signed_by(&params, &next, sig, signer)?;
 
 			// Ensure channel has app.
-			ensure!(params.app != NO_APP, Error::<T>::NoApp);
+			ensure!(params.has_app::<T>(), Error::<T>::NoApp);
 
 			// Check current state.
 			let channel_id = next.channel_id;
@@ -362,7 +366,7 @@ pub mod pallet {
 					// Require valid transition.
 					let cur = dispute.state;
 					ensure!(
-						T::AppRegistry::valid_transition::<T>(&params, &cur, &next, signer),
+						T::AppRegistry::valid_transition(&params, &cur, &next, signer),
 						Error::<T>::InvalidTransition,
 					);
 
@@ -416,7 +420,7 @@ pub mod pallet {
 				if !state.finalized {
 					// Extend timeout for app channels.
 					let mut timeout = dispute.timeout;
-					if dispute.phase == Phase::Register && params.app != NO_APP {
+					if dispute.phase == Phase::Register && params.has_app::<T>() {
 						timeout = timeout + params.challenge_duration;
 					}
 					let now = Self::now();

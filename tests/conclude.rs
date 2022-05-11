@@ -20,7 +20,6 @@ use common::utils::*;
 
 use frame_support::{assert_noop, assert_ok};
 use pallet_perun::types::NonceOf;
-use pallet_perun::types::NO_APP;
 
 #[test]
 fn conclude_ok() {

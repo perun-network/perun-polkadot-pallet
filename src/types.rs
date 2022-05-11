@@ -40,25 +40,27 @@ pub type PkOf<T> = <T as pallet::Config>::PK;
 pub type SigOf<T> = <T as pallet::Config>::Signature;
 pub type ParticipantIndex = u32;
 
-pub type ParamsOf<T> = Params<NonceOf<T>, PkOf<T>, SecondsOf<T>>;
+pub type ParamsOf<T> = Params<NonceOf<T>, PkOf<T>, SecondsOf<T>, AppIdOf<T>>;
 pub type StateOf<T> = State<ChannelIdOf<T>, VersionOf<T>, BalanceOf<T>>;
 pub type RegisteredStateOf<T> = RegisteredState<StateOf<T>, SecondsOf<T>>;
 pub type WithdrawalOf<T> = Withdrawal<ChannelIdOf<T>, PkOf<T>, AccountIdOf<T>>;
 pub type FundingOf<T> = Funding<ChannelIdOf<T>, PkOf<T>>;
 
-pub type AppId = u64;
-pub const NO_APP: AppId = 0;
+pub type AppIdOf<T> = <T as Config>::AppId;
 pub type AppData = Vec<u8>;
 
-pub trait AppRegistry {
-	fn valid_transition<T: pallet::Config>(
+pub trait AppId: Encode + Decode + Member + PartialEq {}
+impl<T: Encode + Decode + Member + PartialEq + 'static> AppId for T {}
+
+pub trait AppRegistry<T: pallet::Config> {
+	fn valid_transition(
 		params: &ParamsOf<T>,
 		from: &StateOf<T>,
 		to: &StateOf<T>,
 		signer: ParticipantIndex,
 	) -> bool;
 
-	fn transition_weight<T: pallet::Config>(params: &ParamsOf<T>) -> Weight;
+	fn transition_weight(params: &ParamsOf<T>) -> Weight;
 }
 
 #[derive(Encode, Decode, Default, Clone, PartialEq, RuntimeDebug)]
@@ -66,7 +68,7 @@ pub trait AppRegistry {
 /// Fixed parameters of a channel.
 ///
 /// The values are agreed on by all participants before opening a channel.
-pub struct Params<Nonce, PK, Seconds> {
+pub struct Params<Nonce, PK, Seconds, AppId> {
 	/// Nonce to make these Params unique. Should be picked randomly.
 	pub nonce: Nonce,
 
@@ -166,14 +168,19 @@ pub struct Funding<ChannelId, PK> {
 	pub part: PK,
 }
 
-impl<Nonce, PK, Seconds> Params<Nonce, PK, Seconds>
+impl<Nonce, PK, Seconds, AppId: crate::AppId> Params<Nonce, PK, Seconds, AppId>
 where
-	Params<Nonce, PK, Seconds>: Encode,
+	Params<Nonce, PK, Seconds, AppId>: Encode,
 {
 	/// Calculates the Channel ID of the Params.
 	pub fn channel_id<T: Hasher>(&self) -> T::Out {
 		let encoded = Encode::encode(&self);
 		T::hash(&encoded)
+	}
+
+	pub fn has_app<T: Config::<AppId=AppId>>(&self) -> bool {
+		let no_app = T::NoApp::get();
+		return self.app != no_app;
 	}
 }
 

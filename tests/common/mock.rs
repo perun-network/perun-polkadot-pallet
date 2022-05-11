@@ -18,8 +18,7 @@ use super::utils::increment_time;
 
 use frame_support::{dispatch::Weight, parameter_types, PalletId};
 use pallet_perun::types::{
-	AppId, AppRegistry, BalanceOf, FundingIdOf, HasherOf, ParamsOf, ParticipantIndex, StateOf,
-	NO_APP,
+	AppIdOf, AppRegistry, BalanceOf, FundingIdOf, HasherOf, ParamsOf, ParticipantIndex, StateOf,
 };
 use sp_core::{crypto::*, H256};
 use sp_runtime::{
@@ -102,10 +101,13 @@ impl pallet_timestamp::Config for Test {
 	type WeightInfo = ();
 }
 
+pub const NO_APP: u64 = 0;
+pub const MOCK_APP: u64 = 1;
 parameter_types! {
 	pub const PerunPalletId: PalletId = PalletId(*b"prnstchs");
 	pub const PerunMinDeposit: u64 = 5;
 	pub const PerunParticipantNum: Range<u32> = 1..256;
+	pub const NoApp: u64 = NO_APP;
 }
 impl pallet_perun::Config for Test {
 	type Event = Event;
@@ -122,6 +124,8 @@ impl pallet_perun::Config for Test {
 	type Seconds = u64;
 	type WeightInfo = ();
 	type AppRegistry = MockRegistry;
+	type AppId = u64;
+	type NoApp = NoApp;
 }
 
 pub struct IDs {
@@ -151,16 +155,14 @@ pub struct Setup {
 	pub params: ParamsOf<Test>,
 }
 
-pub const MOCK_APP: AppId = NO_APP + 1;
 pub const MOCK_DATA_VALID: [u8; 1] = [1];
 
 pub struct MockRegistry {}
-
-impl AppRegistry for MockRegistry {
-	fn valid_transition<T: pallet_perun::Config>(
-		params: &ParamsOf<T>,
-		_from: &StateOf<T>,
-		to: &StateOf<T>,
+impl AppRegistry<Test> for MockRegistry {
+	fn valid_transition(
+		params: &ParamsOf<Test>,
+		_from: &StateOf<Test>,
+		to: &StateOf<Test>,
 		_signer: ParticipantIndex,
 	) -> bool {
 		match params.app {
@@ -169,7 +171,7 @@ impl AppRegistry for MockRegistry {
 		}
 	}
 
-	fn transition_weight<T: pallet_perun::Config>(params: &ParamsOf<T>) -> Weight {
+	fn transition_weight(params: &ParamsOf<Test>) -> Weight {
 		match params.app {
 			MOCK_APP => return 10_000,
 			_ => return 0,
@@ -178,7 +180,7 @@ impl AppRegistry for MockRegistry {
 }
 
 /// Creates a new `Setup` struct.
-pub fn new_setup(app: AppId) -> Setup {
+pub fn new_setup(app: AppIdOf<Test>) -> Setup {
 	let keys = [
 		sp_core::ecdsa::Pair::from_string("//Alice///password", None).unwrap(),
 		sp_core::ecdsa::Pair::from_string("//Bob///password2", None).unwrap(),
@@ -225,7 +227,7 @@ pub fn new_setup(app: AppId) -> Setup {
 
 /// This function builds a genesis block and a setup.
 /// The Setup is passed to `test`.
-pub fn run_test(app: AppId, test: fn(&Setup) -> ()) {
+pub fn run_test(app: AppIdOf<Test>, test: fn(&Setup) -> ()) {
 	let setup = new_setup(app);
 	let mut ext: sp_io::TestExternalities = GenesisConfig {
 		// We use default for brevity, but you can configure as desired if needed.
