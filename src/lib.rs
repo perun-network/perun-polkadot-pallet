@@ -282,8 +282,6 @@ pub mod pallet {
 			Self::validate_fully_signed(&params, &state, state_sigs)?;
 			let channel_id = state.channel_id;
 
-			// AppRegistryFor::validTransition::<T>::();
-
 			let now = Self::now();
 			match <StateRegister<T>>::get(&channel_id) {
 				None => {
