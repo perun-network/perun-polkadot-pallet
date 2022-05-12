@@ -194,7 +194,7 @@ fn conclude_progressed() {
 			sigs[signer].clone(),
 			signer.try_into().unwrap(),
 		));
-		event_progressed(state.channel_id, state.version);
+		event_progressed(state.channel_id, state.version, setup.params.app);
 
 		increment_time(setup.params.challenge_duration);
 		assert_ok!(Perun::conclude(

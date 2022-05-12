@@ -146,7 +146,7 @@ pub mod pallet {
 
 		/// A channel was progressed.
 		/// \[channel_id\]
-		Progressed(ChannelIdOf<T>, VersionOf<T>),
+		Progressed(ChannelIdOf<T>, VersionOf<T>, AppIdOf<T>),
 
 		/// A channel was concluded.
 		/// \[channel_id\]
@@ -379,7 +379,7 @@ pub mod pallet {
 							timeout: dispute.timeout + params.challenge_duration,
 						},
 					);
-					Self::deposit_event(Event::Progressed(channel_id, next.version));
+					Self::deposit_event(Event::Progressed(channel_id, next.version, params.app));
 
 					Ok(())
 				}

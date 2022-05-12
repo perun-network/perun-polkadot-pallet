@@ -22,7 +22,7 @@ use frame_support::{
 	traits::{OnFinalize, OnInitialize},
 };
 use pallet_perun::types::{
-	ChannelIdOf, FundingIdOf, SecondsOf, SigOf, StateOf, VersionOf, WithdrawalOf,
+	ChannelIdOf, FundingIdOf, SecondsOf, SigOf, StateOf, VersionOf, WithdrawalOf, AppIdOf,
 };
 use sp_core::{crypto::*, H256};
 
@@ -43,10 +43,10 @@ pub fn event_disputed(channel_id: ChannelIdOf<Test>, state: StateOf<Test>) {
 }
 
 /// Checks that the last event was a `Progressed` event with the given args.
-pub fn event_progressed(channel_id: ChannelIdOf<Test>, version: VersionOf<Test>) {
+pub fn event_progressed(channel_id: ChannelIdOf<Test>, version: VersionOf<Test>, app: AppIdOf<Test>) {
 	assert_eq!(
 		last_event(),
-		Event::Perun(pallet_perun::Event::Progressed(channel_id, version))
+		Event::Perun(pallet_perun::Event::Progressed(channel_id, version, app))
 	);
 }
 
