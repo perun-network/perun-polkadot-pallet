@@ -225,8 +225,6 @@ fn progress_already_concluded() {
 		assert_ok!(Perun::conclude(
 			Origin::signed(setup.ids.alice),
 			setup.params.clone(),
-			state.clone(),
-			sigs
 		));
 		event_concluded(state.channel_id);
 

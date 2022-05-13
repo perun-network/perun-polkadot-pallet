@@ -103,6 +103,15 @@ fn unsigned_tx() {
 			Perun::conclude(
 				Origin::none(),
 				Default::default(),
+			),
+			BadOrigin
+		);
+	});
+	run_test(MOCK_APP, |_| {
+		assert_noop!(
+			Perun::conclude_final(
+				Origin::none(),
+				Default::default(),
 				Default::default(),
 				Default::default()
 			),

@@ -64,7 +64,7 @@ fn dispute_already_concluded() {
 		state.finalized = true;
 		let sigs = sign_state(&state, &setup);
 
-		assert_ok!(Perun::conclude(
+		assert_ok!(Perun::conclude_final(
 			Origin::signed(setup.ids.alice),
 			setup.params.clone(),
 			state.clone(),

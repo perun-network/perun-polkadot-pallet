@@ -387,6 +387,52 @@ pub mod pallet {
 			}
 		}
 
+		/// Concludes a channel.
+		///
+		/// Can only be called after the dispute period.
+		///
+		/// Emits an [Event::Concluded] event on success.
+		#[pallet::weight(WeightInfoOf::<T>::conclude(params.participants.len() as u32))]
+		pub fn conclude(
+			origin: OriginFor<T>,
+			params: ParamsOf<T>,
+		) -> DispatchResult {
+			ensure_signed(origin)?;
+			let channel_id = params.channel_id::<T::Hasher>();
+			match <StateRegister<T>>::get(&channel_id) {
+				Some(dispute) => {
+					if dispute.phase == Phase::Conclude {
+						return Ok(());
+					}
+	
+					// Check timeout.
+					let mut timeout = dispute.timeout;
+					if dispute.phase == Phase::Register && params.has_app::<T>() {
+						// Extend timeout for app channels.
+						timeout = timeout + params.challenge_duration;
+					}
+					let now = Self::now();
+					ensure!(now >= timeout, Error::<T>::ConcludedTooEarly);
+
+					// Set final outcome.
+					Self::push_outcome(channel_id, &params.participants, &dispute.state.balances)?;
+					
+					// Set the channel to `concluded`.
+					<StateRegister<T>>::insert(
+						channel_id,
+						RegisteredState {
+							phase: Phase::Conclude,
+							state: dispute.state.clone(),
+							timeout: 0.into(),
+						},
+					);
+					Self::deposit_event(Event::Concluded(channel_id));
+					Ok(())
+				}
+				None => Err(Error::<T>::UnknownChannel.into()),
+			}
+		}
+
 		/// Collaboratively concludes a channel in one step.
 		///
 		/// This function concludes a channel in the case that all participants
@@ -395,9 +441,8 @@ pub mod pallet {
 		/// all participants.
 		///
 		/// Emits an [Event::Concluded] event on success.
-		#[pallet::weight(WeightInfoOf::<T>::conclude(
-			cmp::min(state_sigs.len() as u32, T::ParticipantNum::get().end)))]
-		pub fn conclude(
+		#[pallet::weight(WeightInfoOf::<T>::conclude_final(params.participants.len() as u32))]
+		pub fn conclude_final(
 			origin: OriginFor<T>,
 			params: ParamsOf<T>,
 			state: StateOf<T>,
@@ -406,6 +451,8 @@ pub mod pallet {
 			ensure_signed(origin)?;
 			Self::validate_fully_signed(&params, &state, state_sigs)?;
 			let channel_id = state.channel_id;
+
+			ensure!(state.finalized, Error::<T>::StateNotFinal);
 
 			// Check if this channel is being disputed.
 			if let Some(dispute) = <StateRegister<T>>::get(&channel_id) {
@@ -416,28 +463,17 @@ pub mod pallet {
 					);
 					return Ok(());
 				}
-				// Non-finalized states must respect phase timeout.
-				if !state.finalized {
-					// Extend timeout for app channels.
-					let mut timeout = dispute.timeout;
-					if dispute.phase == Phase::Register && params.has_app::<T>() {
-						timeout = timeout + params.challenge_duration;
-					}
-					let now = Self::now();
-					ensure!(now >= timeout, Error::<T>::ConcludedTooEarly);
-				}
-			} else {
-				ensure!(state.finalized, Error::<T>::StateNotFinal);
 			}
 
+			// Set final outcome.
 			Self::push_outcome(channel_id, &params.participants, &state.balances)?;
-			// Set the channel to `concluded` instead of removing it from the map.
+
+			// Set the channel to `concluded`.
 			<StateRegister<T>>::insert(
 				channel_id,
 				RegisteredState {
 					phase: Phase::Conclude,
-					state,
-					// Timeout does not matter on finalized disputes.
+					state: state.clone(),
 					timeout: 0.into(),
 				},
 			);

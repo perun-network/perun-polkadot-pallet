@@ -85,7 +85,7 @@ fn withdraw_unknown_participant() {
 		state.finalized = true;
 		state.balances = vec![0, 0];
 		let sigs = sign_state(&state, &setup);
-		assert_ok!(Perun::conclude(
+		assert_ok!(Perun::conclude_final(
 			Origin::signed(setup.ids.alice),
 			setup.params.clone(),
 			state.clone(),
@@ -127,7 +127,7 @@ fn withdraw_ok() {
 		state.balances = vec![state.balances[1], state.balances[0]];
 		let sigs = sign_state(&state, &setup);
 
-		assert_ok!(Perun::conclude(
+		assert_ok!(Perun::conclude_final(
 			Origin::signed(setup.ids.alice),
 			setup.params.clone(),
 			state.clone(),
