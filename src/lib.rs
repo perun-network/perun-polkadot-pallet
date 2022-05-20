@@ -173,7 +173,7 @@ pub mod pallet {
 		ChallengeDurationOverflow,
 
 		/// Operation is invalid in current phase.
-		WrongPhase,
+		RegisterPhaseOver,
 		/// The operation is potentially valid but too early.
 		TooEarly,
 		/// The operation is not valid anymore.
@@ -304,7 +304,7 @@ pub mod pallet {
 					Ok(())
 				}
 				Some(dispute) => {
-					ensure!(dispute.phase == Phase::Register, Error::<T>::WrongPhase);
+					ensure!(dispute.phase == Phase::Register, Error::<T>::RegisterPhaseOver);
 					// Only register a new dispute iff the timeout still runs
 					// a newer version came in.
 					ensure!(
@@ -364,9 +364,9 @@ pub mod pallet {
 					}
 
 					// Require valid transition.
-					let cur = dispute.state;
+					let current = dispute.state;
 					ensure!(
-						T::AppRegistry::valid_transition(&params, &cur, &next, signer),
+						T::AppRegistry::valid_transition(&params, &current, &next, signer),
 						Error::<T>::InvalidTransition,
 					);
 

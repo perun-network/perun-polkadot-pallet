@@ -42,7 +42,7 @@ fn progress() {
 			sigs[signer].clone(),
 			signer.try_into().unwrap(),
 		));
-		event_progressed(state.channel_id, state.version, setup.params.app);
+		assert_event_progressed(state.channel_id, state.version, setup.params.app);
 	});
 }
 
@@ -178,7 +178,7 @@ fn progress_too_late() {
 			sigs[signer].clone(),
 			signer.try_into().unwrap(),
 		));
-		event_progressed(state.channel_id, state.version, setup.params.app);
+		assert_event_progressed(state.channel_id, state.version, setup.params.app);
 
 		increment_time(setup.params.challenge_duration);
 
@@ -218,7 +218,7 @@ fn progress_already_concluded() {
 			sigs[signer].clone(),
 			signer.try_into().unwrap(),
 		));
-		event_progressed(state.channel_id, state.version, setup.params.app);
+		assert_event_progressed(state.channel_id, state.version, setup.params.app);
 
 		increment_time(setup.params.challenge_duration);
 
@@ -226,7 +226,7 @@ fn progress_already_concluded() {
 			Origin::signed(setup.ids.alice),
 			setup.params.clone(),
 		));
-		event_concluded(state.channel_id);
+		assert_event_concluded(state.channel_id);
 
 		state.version += 1;
 		let sigs = sign_state(&state, &setup);

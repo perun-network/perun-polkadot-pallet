@@ -36,7 +36,7 @@ fn conclude_final() {
 			state.clone(),
 			sigs
 		));
-		event_concluded(state.channel_id);
+		assert_event_concluded(state.channel_id);
 	});
 }
 
@@ -166,7 +166,7 @@ fn conclude_dispute() {
 			Origin::signed(setup.ids.alice),
 			setup.params.clone(),
 		));
-		event_concluded(state.channel_id);
+		assert_event_concluded(state.channel_id);
 	});
 }
 
@@ -191,14 +191,14 @@ fn conclude_progressed() {
 			sigs[signer].clone(),
 			signer.try_into().unwrap(),
 		));
-		event_progressed(state.channel_id, state.version, setup.params.app);
+		assert_event_progressed(state.channel_id, state.version, setup.params.app);
 
 		increment_time(setup.params.challenge_duration);
 		assert_ok!(Perun::conclude(
 			Origin::signed(setup.ids.alice),
 			setup.params.clone(),
 		));
-		event_concluded(state.channel_id);
+		assert_event_concluded(state.channel_id);
 	});
 }
 

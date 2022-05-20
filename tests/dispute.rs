@@ -31,7 +31,7 @@ fn dispute_ok() {
 			sigs
 		));
 		let channel_id = setup.params.channel_id::<HasherOf<Test>>();
-		event_disputed(channel_id, setup.state.clone());
+		assert_event_disputed(channel_id, setup.state.clone());
 	});
 }
 
@@ -79,7 +79,7 @@ fn dispute_already_concluded() {
 				setup.state.clone(),
 				sigs
 			),
-			pallet_perun::Error::<Test>::WrongPhase
+			pallet_perun::Error::<Test>::RegisterPhaseOver
 		);
 	});
 }
@@ -286,7 +286,7 @@ fn dispute_higher_version() {
 				state.clone(),
 				sigs
 			));
-			event_disputed(setup.cid, state.clone());
+			assert_event_disputed(setup.cid, state.clone());
 		}
 	});
 }

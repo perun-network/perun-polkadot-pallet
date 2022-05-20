@@ -34,7 +34,7 @@ fn deposit_some() {
 			10
 		));
 		// Event emitted.
-		event_deposited(setup.fids.alice, 10);
+		assert_event_deposited(setup.fids.alice, 10);
 		// Holdings are now 10.
 		assert_eq!(Perun::deposits(setup.fids.alice), Some(10));
 		// Alice has 90.
@@ -59,7 +59,7 @@ fn deposit_event_absolute() {
 			20
 		));
 		// Last event emitted is 30, not 20.
-		event_deposited(setup.fids.alice, 30);
+		assert_event_deposited(setup.fids.alice, 30);
 		assert_num_event(6);
 	});
 }

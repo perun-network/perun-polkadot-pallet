@@ -27,7 +27,7 @@ use pallet_perun::types::{
 use sp_core::{crypto::*, H256};
 
 /// Checks that the last event was a `Deposited` event with the given args.
-pub fn event_deposited(funding_id: H256, amount: u64) {
+pub fn assert_event_deposited(funding_id: H256, amount: u64) {
 	assert_eq!(
 		last_event(),
 		Event::Perun(pallet_perun::Event::Deposited(funding_id, amount))
@@ -35,7 +35,7 @@ pub fn event_deposited(funding_id: H256, amount: u64) {
 }
 
 /// Checks that the last event was a `Disputed` event with the given args.
-pub fn event_disputed(channel_id: ChannelIdOf<Test>, state: StateOf<Test>) {
+pub fn assert_event_disputed(channel_id: ChannelIdOf<Test>, state: StateOf<Test>) {
 	assert_eq!(
 		last_event(),
 		Event::Perun(pallet_perun::Event::Disputed(channel_id, state))
@@ -43,7 +43,7 @@ pub fn event_disputed(channel_id: ChannelIdOf<Test>, state: StateOf<Test>) {
 }
 
 /// Checks that the last event was a `Progressed` event with the given args.
-pub fn event_progressed(channel_id: ChannelIdOf<Test>, version: VersionOf<Test>, app: AppIdOf<Test>) {
+pub fn assert_event_progressed(channel_id: ChannelIdOf<Test>, version: VersionOf<Test>, app: AppIdOf<Test>) {
 	assert_eq!(
 		last_event(),
 		Event::Perun(pallet_perun::Event::Progressed(channel_id, version, app))
@@ -51,7 +51,7 @@ pub fn event_progressed(channel_id: ChannelIdOf<Test>, version: VersionOf<Test>,
 }
 
 /// Checks that the last event was a `Concluded` event with the given args.
-pub fn event_concluded(channel_id: ChannelIdOf<Test>) {
+pub fn assert_event_concluded(channel_id: ChannelIdOf<Test>) {
 	assert_eq!(
 		last_event(),
 		Event::Perun(pallet_perun::Event::Concluded(channel_id))
