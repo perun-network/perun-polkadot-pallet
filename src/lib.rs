@@ -304,7 +304,10 @@ pub mod pallet {
 					Ok(())
 				}
 				Some(dispute) => {
-					ensure!(dispute.phase == Phase::Register, Error::<T>::RegisterPhaseOver);
+					ensure!(
+						dispute.phase == Phase::Register,
+						Error::<T>::RegisterPhaseOver
+					);
 					// Only register a new dispute iff the timeout still runs
 					// a newer version came in.
 					ensure!(
@@ -393,10 +396,7 @@ pub mod pallet {
 		///
 		/// Emits an [Event::Concluded] event on success.
 		#[pallet::weight(WeightInfoOf::<T>::conclude(params.participants.len() as u32))]
-		pub fn conclude(
-			origin: OriginFor<T>,
-			params: ParamsOf<T>,
-		) -> DispatchResult {
+		pub fn conclude(origin: OriginFor<T>, params: ParamsOf<T>) -> DispatchResult {
 			ensure_signed(origin)?;
 			let channel_id = params.channel_id::<T::Hasher>();
 			match <StateRegister<T>>::get(&channel_id) {
@@ -404,7 +404,7 @@ pub mod pallet {
 					if dispute.phase == Phase::Conclude {
 						return Ok(());
 					}
-	
+
 					// Check timeout.
 					let mut timeout = dispute.timeout;
 					if dispute.phase == Phase::Register && params.has_app::<T>() {
@@ -416,7 +416,7 @@ pub mod pallet {
 
 					// Set final outcome.
 					Self::push_outcome(channel_id, &params.participants, &dispute.state.balances)?;
-					
+
 					// Set the channel to `concluded`.
 					<StateRegister<T>>::insert(
 						channel_id,

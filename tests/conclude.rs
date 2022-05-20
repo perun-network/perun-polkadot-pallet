@@ -273,7 +273,7 @@ fn conclude_twice() {
 	run_test(MOCK_APP, |setup| {
 		deposit_both(&setup);
 		call_dispute(&setup, false);
-		increment_time(2*setup.params.challenge_duration);
+		increment_time(2 * setup.params.challenge_duration);
 
 		assert_ok!(Perun::conclude(
 			Origin::signed(setup.ids.alice),
@@ -298,10 +298,7 @@ fn conclude_too_early_app() {
 		increment_time(setup.params.challenge_duration);
 
 		assert_noop!(
-			Perun::conclude(
-				Origin::signed(setup.ids.alice),
-				setup.params.clone(),
-			),
+			Perun::conclude(Origin::signed(setup.ids.alice), setup.params.clone(),),
 			pallet_perun::Error::<Test>::ConcludedTooEarly
 		);
 	});
@@ -315,10 +312,7 @@ fn conclude_too_early_no_app() {
 		increment_time(setup.params.challenge_duration / 2);
 
 		assert_noop!(
-			Perun::conclude(
-				Origin::signed(setup.ids.alice),
-				setup.params.clone(),
-			),
+			Perun::conclude(Origin::signed(setup.ids.alice), setup.params.clone(),),
 			pallet_perun::Error::<Test>::ConcludedTooEarly
 		);
 	});

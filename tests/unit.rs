@@ -100,10 +100,7 @@ fn unsigned_tx() {
 	});
 	run_test(MOCK_APP, |_| {
 		assert_noop!(
-			Perun::conclude(
-				Origin::none(),
-				Default::default(),
-			),
+			Perun::conclude(Origin::none(), Default::default(),),
 			BadOrigin
 		);
 	});
