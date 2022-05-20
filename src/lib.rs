@@ -97,7 +97,7 @@ pub mod pallet {
 		/// Must be possible to verify that a [Config::PK] created a signature.
 		type Signature: Encode + Decode + Member + Verify<Signer = Self::PK>;
 		/// PK of a [Config::Signature].
-		type PK: Encode + Decode + Member + IdentifyAccount<AccountId = Self::PK> + PartialEq;
+		type PK: Encode + Decode + Member + IdentifyAccount<AccountId = Self::PK>;
 
 		/// Represent a time duration in seconds.
 		type Seconds: FullCodec + Member + CheckedAdd + PartialOrd + From<u64>;
