@@ -50,6 +50,21 @@ benchmarks! {
 		let fid = Pallet::<T>::calc_funding_id(state.channel_id, &pks[0].into());
 		let origin = RawOrigin::Signed(alice.clone()).into();
 		Pallet::<T>::deposit(origin, fid, 500000u64.into())?;
+		// Dispute
+		let origin = RawOrigin::Signed(alice.clone()).into();
+		Pallet::<T>::dispute(origin, params.clone(), state, sigs)?;
+	}: _(RawOrigin::Signed(alice), params)
+
+	conclude_final {
+		let p in 2 .. 255;
+		let num_parts = p;
+
+		// Create params and state.
+		let (alice, pks, params, state, sigs) = gen_conclude_args::<T>(num_parts, true);
+		// Deposit
+		let fid = Pallet::<T>::calc_funding_id(state.channel_id, &pks[0].into());
+		let origin = RawOrigin::Signed(alice.clone()).into();
+		Pallet::<T>::deposit(origin, fid, 500000u64.into())?;
 	}: _(RawOrigin::Signed(alice), params, state, sigs)
 
 	withdraw {
@@ -64,7 +79,7 @@ benchmarks! {
 
 		// Conclude
 		let origin = RawOrigin::Signed(alice.clone()).into();
-		Pallet::<T>::conclude(origin, params.clone(), state, sigs)?;
+		Pallet::<T>::conclude_final(origin, params.clone(), state, sigs)?;
 
 		// Withdraw
 		let (withdrawal, sig) = gen_withdraw_args::<T>(alice.clone(), pks[0], &params);
@@ -153,7 +168,7 @@ where
 		nonce: [0u8; 32].into(),
 		participants: parts,
 		challenge_duration: 0u64.into(),
-		app: NO_APP,
+		app: T::NoApp::get(),
 	}
 }
 
