@@ -108,10 +108,6 @@ Use of the source code is governed by the Apache 2.0 license that can be found i
 [utils.rs]: tests/common/utils.rs
 [mock.rs]: tests/common/mock.rs
 [unit.rs]: tests/unit.rs
-[conclude.rs]: tests/conclude.rs
-[deposit.rs]: tests/deposit.rs
-[dispute.rs]: tests/dispute.rs
-[withdraw.rs]: tests/withdraw.rs
 [Cargo.toml]: Cargo.toml
 
 ## TODO
