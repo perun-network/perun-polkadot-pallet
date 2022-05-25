@@ -109,7 +109,3 @@ Use of the source code is governed by the Apache 2.0 license that can be found i
 [mock.rs]: tests/common/mock.rs
 [unit.rs]: tests/unit.rs
 [Cargo.toml]: Cargo.toml
-
-## TODO
-
-- Store hash of state instead of full state.
