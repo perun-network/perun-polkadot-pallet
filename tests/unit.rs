@@ -27,7 +27,7 @@ use sp_runtime::traits::BadOrigin;
 #[cfg(feature = "expose_privates")]
 #[test]
 fn push_outcome_invalid_parts() {
-	run_test(|setup| {
+	run_test(MOCK_APP, |setup| {
 		let parts: Vec<PkOf<Test>> = vec![];
 		let bals: Vec<BalanceOf<Test>> = vec![Default::default()];
 
@@ -41,7 +41,7 @@ fn push_outcome_invalid_parts() {
 #[cfg(feature = "expose_privates")]
 #[test]
 fn push_outcome_invalid_outcome() {
-	run_test(|setup| {
+	run_test(MOCK_APP, |setup| {
 		let parts: Vec<PkOf<Test>> = vec![Default::default(); 2];
 		let bals: Vec<BalanceOf<Test>> = vec![BalanceOf::<Test>::MAX, 1];
 
@@ -55,7 +55,7 @@ fn push_outcome_invalid_outcome() {
 #[cfg(feature = "expose_privates")]
 #[test]
 fn push_outcome_insufficient_deposit() {
-	run_test(|setup| {
+	run_test(MOCK_APP, |setup| {
 		let parts: Vec<PkOf<Test>> = vec![Default::default(); 1];
 		let bals: Vec<BalanceOf<Test>> = vec![1];
 
@@ -68,7 +68,7 @@ fn push_outcome_insufficient_deposit() {
 
 #[test]
 fn time_now() {
-	run_test(|_| {
+	run_test(MOCK_APP, |_| {
 		// Time starts at 1 second.
 		assert_eq!(1, Perun::now());
 		// Advance the time by 10 seconds.
@@ -81,13 +81,13 @@ fn time_now() {
 #[test]
 /// All functions need signed origins.
 fn unsigned_tx() {
-	run_test(|_| {
+	run_test(MOCK_APP, |_| {
 		assert_noop!(
 			Perun::deposit(Origin::none(), Default::default(), Default::default()),
 			BadOrigin
 		);
 	});
-	run_test(|_| {
+	run_test(MOCK_APP, |_| {
 		assert_noop!(
 			Perun::dispute(
 				Origin::none(),
@@ -98,9 +98,15 @@ fn unsigned_tx() {
 			BadOrigin
 		);
 	});
-	run_test(|_| {
+	run_test(MOCK_APP, |_| {
 		assert_noop!(
-			Perun::conclude(
+			Perun::conclude(Origin::none(), Default::default(),),
+			BadOrigin
+		);
+	});
+	run_test(MOCK_APP, |_| {
+		assert_noop!(
+			Perun::conclude_final(
 				Origin::none(),
 				Default::default(),
 				Default::default(),
@@ -109,7 +115,7 @@ fn unsigned_tx() {
 			BadOrigin
 		);
 	});
-	run_test(|_| {
+	run_test(MOCK_APP, |_| {
 		assert_noop!(
 			Perun::withdraw(Origin::none(), Default::default(), Default::default()),
 			BadOrigin

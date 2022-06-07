@@ -42,7 +42,7 @@ use frame_support::{
 };
 use frame_system::{ensure_signed, pallet_prelude::*};
 use sp_runtime::traits::{AccountIdConversion, CheckedAdd, IdentifyAccount, Verify};
-use sp_std::{cmp, ops::Range, vec::Vec};
+use sp_std::{cmp, convert::TryFrom, ops::Range, vec::Vec};
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -56,10 +56,10 @@ pub mod pallet {
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config + pallet_timestamp::Config {
-		#[pallet::constant]
 		/// ID of this pallet.
 		///
 		/// Only used to derive the pallets account.
+		#[pallet::constant]
 		type PalletId: Get<PalletId>;
 
 		/// Minimal amount that can be deposited to one FundingID.
@@ -70,7 +70,7 @@ pub mod pallet {
 
 		/// Valid range for the number of participants in a channel.
 		#[pallet::constant]
-		type ParticipantNum: Get<Range<u32>>;
+		type ParticipantNum: Get<Range<ParticipantIndex>>;
 
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
@@ -104,6 +104,13 @@ pub mod pallet {
 
 		/// Weight info for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
+
+		type AppId: AppId;
+		#[pallet::constant]
+		type NoApp: Get<Self::AppId>;
+
+		/// App registry.
+		type AppRegistry: AppRegistry<Self>;
 	}
 
 	#[pallet::pallet]
@@ -137,8 +144,12 @@ pub mod pallet {
 		/// \[channel_id, state\]
 		Disputed(ChannelIdOf<T>, StateOf<T>),
 
+		/// A channel was progressed.
+		/// \[channel_id\]
+		Progressed(ChannelIdOf<T>, VersionOf<T>, AppIdOf<T>),
+
 		/// A channel was concluded.
-		/// \[channel_od\]
+		/// \[channel_id\]
 		Concluded(ChannelIdOf<T>),
 
 		/// A participant withdrew funds from a channel.
@@ -161,7 +172,13 @@ pub mod pallet {
 		/// The challenge duration is too large.
 		ChallengeDurationOverflow,
 
-		/// The channel is already concluded.
+		/// Operation is invalid in current phase.
+		RegisterPhaseOver,
+		/// The operation is potentially valid but too early.
+		TooEarly,
+		/// The operation is not valid anymore.
+		TooLate,
+		/// The operation is invalid because the channel is already concluded.
 		AlreadyConcluded,
 		/// The dispute timeout did not yet elapse.
 		ConcludedTooEarly,
@@ -169,6 +186,8 @@ pub mod pallet {
 		NotConcluded,
 		// The channel was already concluded but with a different version.
 		ConcludedWithDifferentVersion,
+		/// Operation is only valid in app channel.
+		NoApp,
 
 		/// The desired outcome overflows the Balance type.
 		OutcomeOverflow,
@@ -194,6 +213,8 @@ pub mod pallet {
 		InvalidSignatureNum,
 		/// The number of participants did not respect the configured limits.
 		InvalidParticipantNum,
+		/// The app channel state transition is invalid.
+		InvalidTransition,
 
 		/// The referenced deposit could not be found.
 		UnknownDeposit,
@@ -274,16 +295,19 @@ pub mod pallet {
 					<StateRegister<T>>::insert(
 						channel_id,
 						RegisteredState {
+							phase: Phase::Register,
 							state: state.clone(),
 							timeout,
-							concluded: false,
 						},
 					);
 					Self::deposit_event(Event::Disputed(channel_id, state));
 					Ok(())
 				}
 				Some(dispute) => {
-					ensure!(!dispute.concluded, Error::<T>::AlreadyConcluded);
+					ensure!(
+						dispute.phase == Phase::Register,
+						Error::<T>::RegisterPhaseOver
+					);
 					// Only register a new dispute iff the timeout still runs
 					// a newer version came in.
 					ensure!(
@@ -295,9 +319,9 @@ pub mod pallet {
 					<StateRegister<T>>::insert(
 						channel_id,
 						RegisteredState {
+							phase: Phase::Register,
 							state: state.clone(),
 							timeout: dispute.timeout,
-							concluded: false,
 						},
 					);
 					Self::deposit_event(Event::Disputed(channel_id, state));
@@ -305,6 +329,110 @@ pub mod pallet {
 				}
 			}
 		}
+
+		/// Progresses the state of an app channel without full consensus.
+		///
+		/// Can only be called after successful state registration and if the
+		/// transition conforms with the app logic.
+		///
+		/// Emits an [Event::Progressed] event on success.
+		#[pallet::weight(WeightInfoOf::<T>::progress::<T>(params))]
+		pub fn progress(
+			origin: OriginFor<T>,
+			params: ParamsOf<T>,
+			next: StateOf<T>,
+			sig: T::Signature,
+			signer: ParticipantIndex,
+		) -> DispatchResult {
+			// Ensure transaction signed by origin.
+			ensure_signed(origin)?;
+
+			// Ensure `next` signed by signer.
+			Self::validate_signed_by(&params, &next, sig, signer)?;
+
+			// Ensure channel has app.
+			ensure!(params.has_app::<T>(), Error::<T>::NoApp);
+
+			// Check current state.
+			let channel_id = next.channel_id;
+			match <StateRegister<T>>::get(channel_id) {
+				Some(dispute) => {
+					// Ensure correct phase. Either after registration or before
+					// end of progression.
+					let now = Self::now();
+					match dispute.phase {
+						Phase::Register => ensure!(now >= dispute.timeout, Error::<T>::TooEarly),
+						Phase::Progress => ensure!(now < dispute.timeout, Error::<T>::TooLate),
+						Phase::Conclude => return Err(Error::<T>::AlreadyConcluded.into()),
+					}
+
+					// Require valid transition.
+					let current = dispute.state;
+					ensure!(
+						T::AppRegistry::valid_transition(&params, &current, &next, signer),
+						Error::<T>::InvalidTransition,
+					);
+
+					// Update state register.
+					<StateRegister<T>>::insert(
+						channel_id,
+						RegisteredState {
+							phase: Phase::Progress,
+							state: next.clone(),
+							timeout: dispute.timeout + params.challenge_duration,
+						},
+					);
+					Self::deposit_event(Event::Progressed(channel_id, next.version, params.app));
+
+					Ok(())
+				}
+				None => Err(Error::<T>::UnknownChannel.into()),
+			}
+		}
+
+		/// Concludes a channel.
+		///
+		/// Can only be called after the dispute period.
+		///
+		/// Emits an [Event::Concluded] event on success.
+		#[pallet::weight(WeightInfoOf::<T>::conclude(params.participants.len() as u32))]
+		pub fn conclude(origin: OriginFor<T>, params: ParamsOf<T>) -> DispatchResult {
+			ensure_signed(origin)?;
+			let channel_id = params.channel_id::<T::Hasher>();
+			match <StateRegister<T>>::get(&channel_id) {
+				Some(dispute) => {
+					if dispute.phase == Phase::Conclude {
+						return Ok(());
+					}
+
+					// Check timeout.
+					let mut timeout = dispute.timeout;
+					if dispute.phase == Phase::Register && params.has_app::<T>() {
+						// Extend timeout for app channels.
+						timeout = timeout + params.challenge_duration;
+					}
+					let now = Self::now();
+					ensure!(now >= timeout, Error::<T>::ConcludedTooEarly);
+
+					// Set final outcome.
+					Self::push_outcome(channel_id, &params.participants, &dispute.state.balances)?;
+
+					// Set the channel to `concluded`.
+					<StateRegister<T>>::insert(
+						channel_id,
+						RegisteredState {
+							phase: Phase::Conclude,
+							state: dispute.state.clone(),
+							timeout: 0.into(),
+						},
+					);
+					Self::deposit_event(Event::Concluded(channel_id));
+					Ok(())
+				}
+				None => Err(Error::<T>::UnknownChannel.into()),
+			}
+		}
+
 		/// Collaboratively concludes a channel in one step.
 		///
 		/// This function concludes a channel in the case that all participants
@@ -313,9 +441,8 @@ pub mod pallet {
 		/// all participants.
 		///
 		/// Emits an [Event::Concluded] event on success.
-		#[pallet::weight(WeightInfoOf::<T>::conclude(
-			cmp::min(state_sigs.len() as u32, T::ParticipantNum::get().end)))]
-		pub fn conclude(
+		#[pallet::weight(WeightInfoOf::<T>::conclude_final(params.participants.len() as u32))]
+		pub fn conclude_final(
 			origin: OriginFor<T>,
 			params: ParamsOf<T>,
 			state: StateOf<T>,
@@ -325,33 +452,29 @@ pub mod pallet {
 			Self::validate_fully_signed(&params, &state, state_sigs)?;
 			let channel_id = state.channel_id;
 
+			ensure!(state.finalized, Error::<T>::StateNotFinal);
+
 			// Check if this channel is being disputed.
 			if let Some(dispute) = <StateRegister<T>>::get(&channel_id) {
-				if dispute.concluded {
+				if dispute.phase == Phase::Conclude {
 					ensure!(
 						dispute.state.version == state.version,
 						Error::<T>::ConcludedWithDifferentVersion
 					);
 					return Ok(());
 				}
-				// Non-finalized states need to respect the dispute timeout.
-				if !state.finalized {
-					let now = Self::now();
-					ensure!(now > dispute.timeout, Error::<T>::ConcludedTooEarly);
-				}
-			} else {
-				ensure!(state.finalized, Error::<T>::StateNotFinal);
 			}
 
+			// Set final outcome.
 			Self::push_outcome(channel_id, &params.participants, &state.balances)?;
-			// Set the channel to `concluded` instead of removing it from the map.
+
+			// Set the channel to `concluded`.
 			<StateRegister<T>>::insert(
 				channel_id,
 				RegisteredState {
-					state,
-					// Timeout does not matter on finalized disputes.
+					phase: Phase::Conclude,
+					state: state.clone(),
 					timeout: 0.into(),
-					concluded: true,
 				},
 			);
 			Self::deposit_event(Event::Concluded(channel_id));
@@ -379,7 +502,7 @@ pub mod pallet {
 
 			match <StateRegister<T>>::get(withdrawal.channel_id) {
 				Some(dispute) => {
-					ensure!(dispute.concluded, Error::<T>::NotConcluded);
+					ensure!(dispute.phase == Phase::Conclude, Error::<T>::NotConcluded);
 					let funding_id = Self::calc_funding_id(withdrawal.channel_id, &withdrawal.part);
 					// Get and remove the deposit.
 					match <Deposits<T>>::take(funding_id) {
@@ -506,6 +629,25 @@ impl<T: Config> Pallet<T> {
 				Error::<T>::InvalidSignature
 			);
 		}
+		Ok(())
+	}
+
+	fn validate_signed_by(
+		params: &ParamsOf<T>,
+		state: &StateOf<T>,
+		sig: T::Signature,
+		signer: ParticipantIndex,
+	) -> DispatchResult {
+		// Check that the State and Params match.
+		let channel_id = params.channel_id::<T::Hasher>();
+		ensure!(state.channel_id == channel_id, Error::<T>::InvalidChannelId);
+
+		// Check the state signature.
+		let signer_usize = usize::try_from(signer).unwrap();
+		ensure!(
+			state.validate_sig(&sig, &params.participants[signer_usize]),
+			Error::<T>::InvalidSignature
+		);
 		Ok(())
 	}
 }

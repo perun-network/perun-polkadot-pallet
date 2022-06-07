@@ -25,21 +25,23 @@ Using it in your blockchain means to include it just like any other Substrate Pa
     * [mock.rs] test configuration
     * [utils.rs] test helpers
   * [unit.rs] pallet unit tests
-  * [conclude.rs], [deposit.rs], [dispute.rs], [withdraw.rs] function unit tests
+  * function unit tests
 * [Cargo.toml] module info and dependencies
 
 ## Protocol
 
-A channel is opened by depositing funds for it into the contract by calling *Deposit*.
+A channel is opened by depositing funds for it into the contract by calling `Deposit`.
 The participants of the channel can then do as many off-chain channel updates as they want.
-When all participants come to the conclusion that the channel should be closed, they set the final flag on the channel state, and call *Conclude*.
-All of them can then withdraw the outcome by calling *Withdraw*. 
+When all participants come to the conclusion that the channel should be closed, they set the final flag on the channel state, and call `ConcludeFinal`.
+All of them can then withdraw the outcome by calling `Withdraw`. 
 
-*Dispute* is only needed if the participants do not arrive at a final channel state off-chain.
-It allows any participant to enforce the last valid state, i.e., the mutually-signed state with the highest version number.
-A dispute is initiated by calling *Dispute* with the latest available state.
-A registered state can be refuted within a specified challenge period by calling *Dispute* with a newer state.
-After the challenge period, the dispute can be concluded by calling *Conclude* and the funds can be withdrawn.
+*Dispute.* If the participants do not arrive at a final channel state off-chain, they need to resolve a dispute on-chain.
+This allows any participant to enforce the last valid state, i.e., the mutually-signed state with the highest version number.
+A dispute is initiated by calling `Dispute` with the latest available state.
+A registered state can be refuted within a specified challenge period by calling `Dispute` with a newer state.
+After the challenge period, the dispute can be concluded by calling `Conclude` and the funds can be withdrawn.
+
+*On-chain progression.* This is an optional phase for channels with an app. It takes place after the dispute registration and allows to update the channel state without full consenus by calling the function `Progress`.
 
 ### State diagram
 
@@ -86,17 +88,15 @@ The authors take no responsibility for any loss of digital assets or other damag
 
 ## Copyright
 
-Copyright 2021 PolyCrypt GmbH.  
+Copyright 2022 PolyCrypt GmbH.  
 Use of the source code is governed by the Apache 2.0 license that can be found in the [LICENSE file](LICENSE).
 
 <!--- Links -->
 
 [go-perun]: https://github.com/hyperledger-labs/go-perun
 [Perun Pallet]: https://github.com/perun-network/perun-polkadot-pallet
-<!-- markdown-link-check-disable -->
 [Polkadot Node]: https://github.com/perun-network/perun-polkadot-node
 [there]: https://github.com/perun-network/perun-polkadot-node/blob/master/README.md#benchmarking
-<!-- markdown-link-check-enable -->
 [frontend template]: https://github.com/substrate-developer-hub/substrate-front-end-template
 
 [Open Grant]: https://github.com/perun-network/Open-Grants-Program/blob/master/applications/perun_channels.md#w3f-open-grant-proposal
@@ -108,8 +108,4 @@ Use of the source code is governed by the Apache 2.0 license that can be found i
 [utils.rs]: tests/common/utils.rs
 [mock.rs]: tests/common/mock.rs
 [unit.rs]: tests/unit.rs
-[conclude.rs]: tests/conclude.rs
-[deposit.rs]: tests/deposit.rs
-[dispute.rs]: tests/dispute.rs
-[withdraw.rs]: tests/withdraw.rs
 [Cargo.toml]: Cargo.toml

@@ -13,6 +13,8 @@
 //  limitations under the License.
 
 mod common;
+use std::convert::TryInto;
+
 use common::mock::*;
 use common::utils::*;
 
@@ -20,31 +22,31 @@ use frame_support::{assert_noop, assert_ok};
 use pallet_perun::types::NonceOf;
 
 #[test]
-fn conclude_ok() {
-	run_test(|setup| {
+fn conclude_final() {
+	run_test(MOCK_APP, |setup| {
 		let mut state = setup.state.clone();
 		state.finalized = true;
 		// Set the balances to 0 so it does not fail bc of missing deposits.
 		state.balances = vec![0, 0];
 		let sigs = sign_state(&state, &setup);
 
-		assert_ok!(Perun::conclude(
+		assert_ok!(Perun::conclude_final(
 			Origin::signed(setup.ids.alice),
 			setup.params.clone(),
 			state.clone(),
 			sigs
 		));
-		event_concluded(state.channel_id);
+		assert_event_concluded(state.channel_id);
 	});
 }
 
 #[test]
 fn conclude_not_final() {
-	run_test(|setup| {
+	run_test(MOCK_APP, |setup| {
 		let sigs = sign_state(&setup.state, &setup);
 
 		assert_noop!(
-			Perun::conclude(
+			Perun::conclude_final(
 				Origin::signed(setup.ids.alice),
 				setup.params.clone(),
 				setup.state.clone(),
@@ -59,7 +61,7 @@ fn conclude_not_final() {
 
 #[test]
 fn conclude_invalid_part_num() {
-	run_test(|setup| {
+	run_test(MOCK_APP, |setup| {
 		let mut state = setup.state.clone();
 		state.finalized = true;
 		let bad_sigs = vec![
@@ -67,7 +69,7 @@ fn conclude_invalid_part_num() {
 		];
 		for bad_sig in bad_sigs {
 			assert_noop!(
-				Perun::conclude(
+				Perun::conclude_final(
 					Origin::signed(setup.ids.carl),
 					setup.params.clone(),
 					state.clone(),
@@ -82,7 +84,7 @@ fn conclude_invalid_part_num() {
 
 #[test]
 fn conclude_invalid_sig_nums() {
-	run_test(|setup| {
+	run_test(MOCK_APP, |setup| {
 		let mut state = setup.state.clone();
 		state.finalized = true;
 		let sigs = sign_state(&setup.state, &setup);
@@ -92,7 +94,7 @@ fn conclude_invalid_sig_nums() {
 		];
 		for bad_sig in bad_sigs {
 			assert_noop!(
-				Perun::conclude(
+				Perun::conclude_final(
 					Origin::signed(setup.ids.carl),
 					setup.params.clone(),
 					state.clone(),
@@ -107,7 +109,7 @@ fn conclude_invalid_sig_nums() {
 
 #[test]
 fn conclude_invalid_sig() {
-	run_test(|setup| {
+	run_test(MOCK_APP, |setup| {
 		let mut state = setup.state.clone();
 		let sigs_bad = sign_state(&state, &setup);
 		state.finalized = true;
@@ -121,7 +123,7 @@ fn conclude_invalid_sig() {
 
 		for sig in sigs {
 			assert_noop!(
-				Perun::conclude(
+				Perun::conclude_final(
 					Origin::signed(setup.ids.carl),
 					setup.params.clone(),
 					state.clone(),
@@ -136,7 +138,7 @@ fn conclude_invalid_sig() {
 
 #[test]
 fn conclude_invalid_channel_id() {
-	run_test(|setup| {
+	run_test(MOCK_APP, |setup| {
 		let mut state = setup.state.clone();
 		state.finalized = true;
 		let sigs = sign_state(&state, &setup);
@@ -145,7 +147,7 @@ fn conclude_invalid_channel_id() {
 
 		// Different nonce
 		assert_noop!(
-			Perun::conclude(Origin::signed(setup.ids.carl), params, state.clone(), sigs),
+			Perun::conclude_final(Origin::signed(setup.ids.carl), params, state.clone(), sigs),
 			pallet_perun::Error::<Test>::InvalidChannelId
 		);
 		assert_no_events();
@@ -154,27 +156,56 @@ fn conclude_invalid_channel_id() {
 
 #[test]
 fn conclude_dispute() {
-	run_test(|setup| {
+	run_test(MOCK_APP, |setup| {
 		deposit_both(&setup);
 		call_dispute(&setup, false);
-		let mut state = setup.state.clone();
-		state.finalized = true;
-		let sigs = sign_state(&state, &setup);
+		let state = setup.state.clone();
 
+		increment_time(2 * setup.params.challenge_duration);
 		assert_ok!(Perun::conclude(
 			Origin::signed(setup.ids.alice),
 			setup.params.clone(),
-			state.clone(),
-			sigs
 		));
-		event_concluded(state.channel_id);
+		assert_event_concluded(state.channel_id);
+	});
+}
+
+#[test]
+fn conclude_progressed() {
+	run_test(MOCK_APP, |setup| {
+		deposit_both(&setup);
+		call_dispute(&setup, false);
+
+		increment_time(setup.params.challenge_duration);
+
+		let mut state = setup.state.clone();
+		state.version += 1;
+		state.data = MOCK_DATA_VALID.to_vec();
+		let sigs = sign_state(&state, &setup);
+
+		let signer = 0;
+		assert_ok!(Perun::progress(
+			Origin::signed(setup.ids.alice),
+			setup.params.clone(),
+			state.clone(),
+			sigs[signer].clone(),
+			signer.try_into().unwrap(),
+		));
+		assert_event_progressed(state.channel_id, state.version, setup.params.app);
+
+		increment_time(setup.params.challenge_duration);
+		assert_ok!(Perun::conclude(
+			Origin::signed(setup.ids.alice),
+			setup.params.clone(),
+		));
+		assert_event_concluded(state.channel_id);
 	});
 }
 
 #[test]
 /// The participants try to withdraw more funds than they deposited.
 fn conclude_insufficient_deposits() {
-	run_test(|setup| {
+	run_test(MOCK_APP, |setup| {
 		let mut state = setup.state.clone();
 		state.finalized = true;
 		// Alice and Bob deposit.
@@ -185,7 +216,7 @@ fn conclude_insufficient_deposits() {
 		let sigs = sign_state(&state, &setup);
 
 		assert_noop!(
-			Perun::conclude(
+			Perun::conclude_final(
 				Origin::signed(setup.ids.alice),
 				setup.params.clone(),
 				state,
@@ -197,26 +228,36 @@ fn conclude_insufficient_deposits() {
 }
 
 #[test]
-fn conclude_already_concluded_different_version() {
-	run_test(|setup| {
+fn conclude_final_already_concluded() {
+	run_test(MOCK_APP, |setup| {
 		deposit_both(&setup);
 		call_dispute(&setup, false);
 		let mut state = setup.state.clone();
 		state.finalized = true;
 		let sigs = sign_state(&state, &setup);
 
-		assert_ok!(Perun::conclude(
+		assert_ok!(Perun::conclude_final(
 			Origin::signed(setup.ids.alice),
 			setup.params.clone(),
 			state.clone(),
 			sigs.clone()
 		));
 
+		// Twice works, but no new event will be emitted.
+		let events = num_events();
+		assert_ok!(Perun::conclude_final(
+			Origin::signed(setup.ids.alice),
+			setup.params.clone(),
+			state.clone(),
+			sigs.clone()
+		));
+		assert_num_event(events);
+
 		// Concluding twice with a different version errors.
 		state.version = state.version + 1;
 		let sigs = sign_state(&state, &setup);
 		assert_noop!(
-			Perun::conclude(
+			Perun::conclude_final(
 				Origin::signed(setup.ids.alice),
 				setup.params.clone(),
 				state.clone(),
@@ -229,18 +270,14 @@ fn conclude_already_concluded_different_version() {
 
 #[test]
 fn conclude_twice() {
-	run_test(|setup| {
+	run_test(MOCK_APP, |setup| {
 		deposit_both(&setup);
 		call_dispute(&setup, false);
-		let mut state = setup.state.clone();
-		state.finalized = true;
-		let sigs = sign_state(&state, &setup);
+		increment_time(2 * setup.params.challenge_duration);
 
 		assert_ok!(Perun::conclude(
 			Origin::signed(setup.ids.alice),
 			setup.params.clone(),
-			state.clone(),
-			sigs.clone()
 		));
 
 		// Twice works, but no new event will be emitted.
@@ -248,26 +285,34 @@ fn conclude_twice() {
 		assert_ok!(Perun::conclude(
 			Origin::signed(setup.ids.alice),
 			setup.params.clone(),
-			state.clone(),
-			sigs
 		));
 		assert_num_event(events);
 	});
 }
 
 #[test]
-fn conclude_too_early() {
-	run_test(|setup| {
+fn conclude_too_early_app() {
+	run_test(MOCK_APP, |setup| {
+		deposit_both(&setup);
 		call_dispute(&setup, false);
-		let sigs = sign_state(&setup.state, &setup);
+		increment_time(setup.params.challenge_duration);
 
 		assert_noop!(
-			Perun::conclude(
-				Origin::signed(setup.ids.alice),
-				setup.params.clone(),
-				setup.state.clone(),
-				sigs
-			),
+			Perun::conclude(Origin::signed(setup.ids.alice), setup.params.clone(),),
+			pallet_perun::Error::<Test>::ConcludedTooEarly
+		);
+	});
+}
+
+#[test]
+fn conclude_too_early_no_app() {
+	run_test(NO_APP, |setup| {
+		deposit_both(&setup);
+		call_dispute(&setup, false);
+		increment_time(setup.params.challenge_duration / 2);
+
+		assert_noop!(
+			Perun::conclude(Origin::signed(setup.ids.alice), setup.params.clone(),),
 			pallet_perun::Error::<Test>::ConcludedTooEarly
 		);
 	});

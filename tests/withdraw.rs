@@ -23,7 +23,7 @@ use sp_core::crypto::Pair;
 
 #[test]
 fn withdraw_invalid_sig() {
-	run_test(|setup| {
+	run_test(MOCK_APP, |setup| {
 		let withdrawal = WithdrawalOf::<Test> {
 			channel_id: setup.cid,
 			receiver: setup.ids.alice,
@@ -43,7 +43,7 @@ fn withdraw_invalid_sig() {
 
 #[test]
 fn withdraw_unknown_channel() {
-	run_test(|setup| {
+	run_test(MOCK_APP, |setup| {
 		let withdrawal = WithdrawalOf::<Test> {
 			channel_id: setup.cid,
 			receiver: setup.ids.alice,
@@ -62,7 +62,7 @@ fn withdraw_unknown_channel() {
 /// Test that withdrawing from a not concluded channel fails.
 /// It is still possible to dispute unfunded channels…
 fn withdraw_not_concluded() {
-	run_test(|setup| {
+	run_test(MOCK_APP, |setup| {
 		call_dispute(setup, false);
 		let withdrawal = WithdrawalOf::<Test> {
 			channel_id: setup.cid,
@@ -80,12 +80,12 @@ fn withdraw_not_concluded() {
 
 #[test]
 fn withdraw_unknown_participant() {
-	run_test(|setup| {
+	run_test(MOCK_APP, |setup| {
 		let mut state = setup.state.clone();
 		state.finalized = true;
 		state.balances = vec![0, 0];
 		let sigs = sign_state(&state, &setup);
-		assert_ok!(Perun::conclude(
+		assert_ok!(Perun::conclude_final(
 			Origin::signed(setup.ids.alice),
 			setup.params.clone(),
 			state.clone(),
@@ -113,7 +113,7 @@ fn withdraw_unknown_participant() {
 
 #[test]
 fn withdraw_ok() {
-	run_test(|setup| {
+	run_test(MOCK_APP, |setup| {
 		// Deposit
 		{
 			deposit_both(&setup);
@@ -127,7 +127,7 @@ fn withdraw_ok() {
 		state.balances = vec![state.balances[1], state.balances[0]];
 		let sigs = sign_state(&state, &setup);
 
-		assert_ok!(Perun::conclude(
+		assert_ok!(Perun::conclude_final(
 			Origin::signed(setup.ids.alice),
 			setup.params.clone(),
 			state.clone(),

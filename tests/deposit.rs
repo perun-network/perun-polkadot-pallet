@@ -22,7 +22,7 @@ use pallet_perun::{types::BalanceOf, Error};
 #[test]
 /// tests that depositing funds to a funding id works.
 fn deposit_some() {
-	run_test(|setup| {
+	run_test(MOCK_APP, |setup| {
 		// Holdings are 0.
 		assert_eq!(Perun::deposits(setup.fids.alice), None);
 		// Alice has 100.
@@ -34,7 +34,7 @@ fn deposit_some() {
 			10
 		));
 		// Event emitted.
-		event_deposited(setup.fids.alice, 10);
+		assert_event_deposited(setup.fids.alice, 10);
 		// Holdings are now 10.
 		assert_eq!(Perun::deposits(setup.fids.alice), Some(10));
 		// Alice has 90.
@@ -46,7 +46,7 @@ fn deposit_some() {
 /// Test that the `Deposited` always contains the total deposit
 /// and not the relative amount.
 fn deposit_event_absolute() {
-	run_test(|setup| {
+	run_test(MOCK_APP, |setup| {
 		// Alice deposits 10 and then 20.
 		assert_ok!(Perun::deposit(
 			Origin::signed(setup.ids.alice),
@@ -59,7 +59,7 @@ fn deposit_event_absolute() {
 			20
 		));
 		// Last event emitted is 30, not 20.
-		event_deposited(setup.fids.alice, 30);
+		assert_event_deposited(setup.fids.alice, 30);
 		assert_num_event(6);
 	});
 }
@@ -67,7 +67,7 @@ fn deposit_event_absolute() {
 #[test]
 /// Tests that depositing less than `MinDeposit` errors and does nothing.
 fn deposit_amount_too_low() {
-	run_test(|setup| {
+	run_test(MOCK_APP, |setup| {
 		let min = PerunMinDeposit::get();
 
 		// Holdings are now 0.
@@ -97,7 +97,7 @@ fn deposit_amount_too_low() {
 #[test]
 /// Tests that depositing without having enough balance errors and does nothing.
 fn deposit_insufficient_balance() {
-	run_test(|setup| {
+	run_test(MOCK_APP, |setup| {
 		// Holdings are 0.
 		assert_eq!(Perun::deposits(setup.fids.alice), None);
 		// Dora has 1.
@@ -122,7 +122,7 @@ fn deposit_insufficient_balance() {
 
 #[test]
 fn deposit_overflow() {
-	run_test(|setup| {
+	run_test(MOCK_APP, |setup| {
 		// Alice deposits 10.
 		assert_ok!(Perun::deposit(
 			Origin::signed(setup.ids.alice),

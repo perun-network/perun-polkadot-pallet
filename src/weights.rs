@@ -35,11 +35,15 @@
 use frame_support::{traits::Get, weights::{Weight, constants::RocksDbWeight}};
 use sp_std::marker::PhantomData;
 
+use crate::{types::{ParamsOf, AppRegistry}, Config};
+
 /// Weight functions needed for pallet_perun.
 pub trait WeightInfo {
 	fn deposit() -> Weight;
 	fn dispute(p: u32, ) -> Weight;
+	fn progress<T: Config>(params: &ParamsOf<T>) -> Weight;
 	fn conclude(p: u32, ) -> Weight;
+	fn conclude_final(p: u32, ) -> Weight;
 	fn withdraw() -> Weight;
 }
 
@@ -62,6 +66,10 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(2 as Weight))
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
+	//TODO: benchmark weight and replace constant
+	fn progress<U: Config>(params: &ParamsOf<U>) -> Weight {
+		return 10_000 + U::AppRegistry::transition_weight(params);
+	}
 	// Storage: PerunModule StateRegister (r:1 w:1)
 	// Storage: PerunModule Deposits (r:2 w:2)
 	fn conclude(p: u32, ) -> Weight {
@@ -72,6 +80,10 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads((1 as Weight).saturating_mul(p as Weight)))
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 			.saturating_add(T::DbWeight::get().writes((1 as Weight).saturating_mul(p as Weight)))
+	}
+	//TODO: benchmark weight and replace constant
+	fn conclude_final(_p: u32, ) -> Weight {
+		return 10_000;
 	}
 	// Storage: PerunModule StateRegister (r:1 w:0)
 	// Storage: PerunModule Deposits (r:1 w:1)
@@ -101,6 +113,10 @@ impl WeightInfo for () {
 			.saturating_add(RocksDbWeight::get().reads(2 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
 	}
+	//TODO: benchmark weight and replace constant
+	fn progress<U: Config>(params: &ParamsOf<U>) -> Weight {
+		return 10_000 + U::AppRegistry::transition_weight(params);
+	}
 	// Storage: PerunModule StateRegister (r:1 w:1)
 	// Storage: PerunModule Deposits (r:2 w:2)
 	fn conclude(p: u32, ) -> Weight {
@@ -111,6 +127,10 @@ impl WeightInfo for () {
 			.saturating_add(RocksDbWeight::get().reads((1 as Weight).saturating_mul(p as Weight)))
 			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
 			.saturating_add(RocksDbWeight::get().writes((1 as Weight).saturating_mul(p as Weight)))
+	}
+	//TODO: benchmark weight and replace constant
+	fn conclude_final(_p: u32) -> Weight {
+		return 10_000;
 	}
 	// Storage: PerunModule StateRegister (r:1 w:0)
 	// Storage: PerunModule Deposits (r:1 w:1)

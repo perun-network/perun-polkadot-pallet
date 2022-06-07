@@ -16,8 +16,10 @@ use pallet_balances;
 
 use super::utils::increment_time;
 
-use frame_support::{parameter_types, PalletId};
-use pallet_perun::types::{BalanceOf, FundingIdOf, HasherOf, ParamsOf, StateOf};
+use frame_support::{dispatch::Weight, parameter_types, PalletId};
+use pallet_perun::types::{
+	AppIdOf, AppRegistry, BalanceOf, FundingIdOf, HasherOf, ParamsOf, ParticipantIndex, StateOf,
+};
 use sp_core::{crypto::*, H256};
 use sp_runtime::{
 	testing::Header,
@@ -99,10 +101,13 @@ impl pallet_timestamp::Config for Test {
 	type WeightInfo = ();
 }
 
+pub const NO_APP: u64 = 0;
+pub const MOCK_APP: u64 = 1;
 parameter_types! {
 	pub const PerunPalletId: PalletId = PalletId(*b"prnstchs");
 	pub const PerunMinDeposit: u64 = 5;
 	pub const PerunParticipantNum: Range<u32> = 1..256;
+	pub const NoApp: u64 = NO_APP;
 }
 impl pallet_perun::Config for Test {
 	type Event = Event;
@@ -118,6 +123,9 @@ impl pallet_perun::Config for Test {
 	type HashValue = H256;
 	type Seconds = u64;
 	type WeightInfo = ();
+	type AppRegistry = MockRegistry;
+	type AppId = u64;
+	type NoApp = NoApp;
 }
 
 pub struct IDs {
@@ -147,8 +155,32 @@ pub struct Setup {
 	pub params: ParamsOf<Test>,
 }
 
+pub const MOCK_DATA_VALID: [u8; 1] = [1];
+
+pub struct MockRegistry {}
+impl AppRegistry<Test> for MockRegistry {
+	fn valid_transition(
+		params: &ParamsOf<Test>,
+		_from: &StateOf<Test>,
+		to: &StateOf<Test>,
+		_signer: ParticipantIndex,
+	) -> bool {
+		match params.app {
+			MOCK_APP => return to.data == MOCK_DATA_VALID,
+			_ => return false,
+		}
+	}
+
+	fn transition_weight(params: &ParamsOf<Test>) -> Weight {
+		match params.app {
+			MOCK_APP => return 10_000,
+			_ => return 0,
+		}
+	}
+}
+
 /// Creates a new `Setup` struct.
-pub fn new_setup() -> Setup {
+pub fn new_setup(app: AppIdOf<Test>) -> Setup {
 	let keys = [
 		sp_core::ecdsa::Pair::from_string("//Alice///password", None).unwrap(),
 		sp_core::ecdsa::Pair::from_string("//Bob///password2", None).unwrap(),
@@ -161,6 +193,7 @@ pub fn new_setup() -> Setup {
 		],
 		participants: vec![keys[0].public(), keys[1].public()],
 		challenge_duration: 10,
+		app,
 	};
 	let cid = params.channel_id::<HasherOf<Test>>();
 
@@ -186,6 +219,7 @@ pub fn new_setup() -> Setup {
 			version: 123,
 			balances: vec![10, 5],
 			finalized: false,
+			data: vec![],
 		},
 		params: params,
 	}
@@ -193,8 +227,8 @@ pub fn new_setup() -> Setup {
 
 /// This function builds a genesis block and a setup.
 /// The Setup is passed to `test`.
-pub fn run_test(test: fn(&Setup) -> ()) {
-	let setup = new_setup();
+pub fn run_test(app: AppIdOf<Test>, test: fn(&Setup) -> ()) {
+	let setup = new_setup(app);
 	let mut ext: sp_io::TestExternalities = GenesisConfig {
 		// We use default for brevity, but you can configure as desired if needed.
 		system: Default::default(),

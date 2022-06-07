@@ -38,19 +38,37 @@ pub type AccountIdOf<T> = <T as frame_system::Config>::AccountId;
 pub type HasherOf<T> = <T as pallet::Config>::Hasher;
 pub type PkOf<T> = <T as pallet::Config>::PK;
 pub type SigOf<T> = <T as pallet::Config>::Signature;
+pub type ParticipantIndex = u32;
 
-pub type ParamsOf<T> = Params<NonceOf<T>, PkOf<T>, SecondsOf<T>>;
+pub type ParamsOf<T> = Params<NonceOf<T>, PkOf<T>, SecondsOf<T>, AppIdOf<T>>;
 pub type StateOf<T> = State<ChannelIdOf<T>, VersionOf<T>, BalanceOf<T>>;
 pub type RegisteredStateOf<T> = RegisteredState<StateOf<T>, SecondsOf<T>>;
 pub type WithdrawalOf<T> = Withdrawal<ChannelIdOf<T>, PkOf<T>, AccountIdOf<T>>;
 pub type FundingOf<T> = Funding<ChannelIdOf<T>, PkOf<T>>;
+
+pub type AppIdOf<T> = <T as Config>::AppId;
+pub type AppData = Vec<u8>;
+
+pub trait AppId: Encode + Decode + Member + PartialEq {}
+impl<T: Encode + Decode + Member + PartialEq + 'static> AppId for T {}
+
+pub trait AppRegistry<T: pallet::Config> {
+	fn valid_transition(
+		params: &ParamsOf<T>,
+		from: &StateOf<T>,
+		to: &StateOf<T>,
+		signer: ParticipantIndex,
+	) -> bool;
+
+	fn transition_weight(params: &ParamsOf<T>) -> Weight;
+}
 
 #[derive(Encode, Decode, Default, Clone, PartialEq, RuntimeDebug)]
 #[codec(dumb_trait_bound)]
 /// Fixed parameters of a channel.
 ///
 /// The values are agreed on by all participants before opening a channel.
-pub struct Params<Nonce, PK, Seconds> {
+pub struct Params<Nonce, PK, Seconds, AppId> {
 	/// Nonce to make these Params unique. Should be picked randomly.
 	pub nonce: Nonce,
 
@@ -59,6 +77,9 @@ pub struct Params<Nonce, PK, Seconds> {
 
 	/// Challenge duration of the channel.
 	pub challenge_duration: Seconds,
+
+	// App in channel.
+	pub app: AppId,
 }
 
 #[derive(Encode, Decode, Default, Clone, PartialEq, RuntimeDebug)]
@@ -90,6 +111,16 @@ pub struct State<ChannelId, Version, Balance> {
 	/// An honest participant will never sign another state after he signed a
 	/// final state.
 	pub finalized: bool,
+
+	// App data.
+	pub data: AppData,
+}
+
+#[derive(Encode, Decode, Copy, Clone, PartialEq, RuntimeDebug)]
+pub enum Phase {
+	Register,
+	Progress,
+	Conclude,
 }
 
 #[derive(Encode, Decode, Copy, Clone, PartialEq, RuntimeDebug)]
@@ -98,6 +129,9 @@ pub struct State<ChannelId, Version, Balance> {
 ///
 /// Is used to track disputes and concluded channels.
 pub struct RegisteredState<State, Seconds> {
+	// The protocol phase.
+	pub phase: Phase,
+
 	/// The registered state.
 	pub state: State,
 
@@ -105,12 +139,6 @@ pub struct RegisteredState<State, Seconds> {
 	///
 	/// Has no meaning for final states.
 	pub timeout: Seconds,
-
-	/// Set iff a channel is concluded.
-	///
-	/// This means that no other function than [Pallet::withdraw] can be
-	/// called on the channel.
-	pub concluded: bool,
 }
 
 #[derive(Encode, Decode, Default, Copy, Clone, PartialEq, RuntimeDebug)]
@@ -140,14 +168,19 @@ pub struct Funding<ChannelId, PK> {
 	pub part: PK,
 }
 
-impl<Nonce, PK, Seconds> Params<Nonce, PK, Seconds>
+impl<Nonce, PK, Seconds, AppId: crate::AppId> Params<Nonce, PK, Seconds, AppId>
 where
-	Params<Nonce, PK, Seconds>: Encode,
+	Params<Nonce, PK, Seconds, AppId>: Encode,
 {
 	/// Calculates the Channel ID of the Params.
 	pub fn channel_id<T: Hasher>(&self) -> T::Out {
 		let encoded = Encode::encode(&self);
 		T::hash(&encoded)
+	}
+
+	pub fn has_app<T: Config<AppId = AppId>>(&self) -> bool {
+		let no_app = T::NoApp::get();
+		return self.app != no_app;
 	}
 }
 
