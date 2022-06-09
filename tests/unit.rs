@@ -52,20 +52,6 @@ fn push_outcome_invalid_outcome() {
 	});
 }
 
-#[cfg(feature = "expose_privates")]
-#[test]
-fn push_outcome_insufficient_deposit() {
-	run_test(MOCK_APP, |setup| {
-		let parts: Vec<PkOf<Test>> = vec![Default::default(); 1];
-		let bals: Vec<BalanceOf<Test>> = vec![1];
-
-		assert_noop!(
-			Perun::push_outcome_test(setup.cid, &parts, &bals),
-			Error::<Test>::InsufficientDeposits
-		);
-	});
-}
-
 #[test]
 fn time_now() {
 	run_test(MOCK_APP, |_| {

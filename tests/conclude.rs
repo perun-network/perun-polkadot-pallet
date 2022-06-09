@@ -215,15 +215,19 @@ fn conclude_insufficient_deposits() {
 		state.balances[0] += 1;
 		let sigs = sign_state(&state, &setup);
 
-		assert_noop!(
-			Perun::conclude_final(
-				Origin::signed(setup.ids.alice),
-				setup.params.clone(),
-				state,
-				sigs
-			),
-			pallet_perun::Error::<Test>::InsufficientDeposits
-		);
+		let alice_deposits = Perun::deposits(setup.fids.alice);
+		let bob_deposits = Perun::deposits(setup.fids.bob);
+		assert_ok!(Perun::conclude_final(
+			Origin::signed(setup.ids.alice),
+			setup.params.clone(),
+			state.clone(),
+			sigs
+		));
+		assert_event_concluded(state.channel_id);
+
+		// Holdings did not changed
+		assert_eq!(alice_deposits, Perun::deposits(setup.fids.alice));
+		assert_eq!(bob_deposits, Perun::deposits(setup.fids.bob));
 	});
 }
 
