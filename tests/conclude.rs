@@ -225,7 +225,7 @@ fn conclude_insufficient_deposits() {
 		));
 		assert_event_concluded(state.channel_id);
 
-		// Holdings did not changed
+		// Holdings did not change
 		assert_eq!(alice_deposits, Perun::deposits(setup.fids.alice));
 		assert_eq!(bob_deposits, Perun::deposits(setup.fids.bob));
 	});
