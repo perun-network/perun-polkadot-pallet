@@ -193,8 +193,6 @@ pub mod pallet {
 		OutcomeOverflow,
 		/// The desired outcome of the channel is invalid.
 		InvalidOutcome,
-		/// The desired outcome is higher than the initial deposits.
-		InsufficientDeposits,
 		/// A deposit would overflow the balance type.
 		DepositOverflow,
 
@@ -585,12 +583,14 @@ impl<T: Config> Pallet<T> {
 			);
 		}
 		// Ensure that the participants of a channel can never withdraw more
-		// than their initially deposited.
-		ensure!(sum_deposit >= sum_outcome, Error::<T>::InsufficientDeposits);
-		// Over-funding a channel will result in lost funds.
-		// Now we split up all funds according to the outcome.
-		for (i, fid) in fids.iter().enumerate() {
-			<Deposits<T>>::insert(&fid, outcome[i]);
+		// than they initially deposited. Over-funding a channel will result in
+		// lost funds. If the funding is incomplete, the deposits will not be
+		// touched.
+		if sum_deposit >= sum_outcome {
+			// We redistribute the funds according to the outcome.
+			for (i, fid) in fids.iter().enumerate() {
+				<Deposits<T>>::insert(&fid, outcome[i]);
+			}
 		}
 		Ok(())
 	}
