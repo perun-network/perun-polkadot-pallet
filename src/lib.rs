@@ -350,6 +350,7 @@ pub mod pallet {
 			sig: T::Signature,
 			signer: ParticipantIndex,
 		) -> DispatchResult {
+			frame_support::runtime_print!("PerunPallet:progress");
 			// Ensure transaction signed by origin.
 			ensure_signed(origin)?;
 
@@ -366,18 +367,22 @@ pub mod pallet {
 					// Ensure correct phase. Must be after dispute timeout and not
 					// concluded.
 					let now = Self::now();
+					frame_support::runtime_print!("PerunPallet:Before check phase and timeout");
 					match dispute.phase {
 						Phase::Register => ensure!(now >= dispute.timeout, Error::<T>::TooEarly),
 						Phase::Progress => {}
 						Phase::Conclude => return Err(Error::<T>::AlreadyConcluded.into()),
 					}
+					frame_support::runtime_print!("PerunPallet:After check phase and timeout");
 
 					// Require valid transition.
+					frame_support::runtime_print!("PerunPallet:Before valid transition");
 					let current = dispute.state;
 					ensure!(
 						Self::valid_transition(&params, &current, &next, signer),
 						Error::<T>::InvalidTransition,
 					);
+					frame_support::runtime_print!("PerunPallet:After valid transition");
 
 					// Update state register.
 					<StateRegister<T>>::insert(
