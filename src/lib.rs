@@ -363,12 +363,12 @@ pub mod pallet {
 			let channel_id = next.channel_id;
 			match <StateRegister<T>>::get(channel_id) {
 				Some(dispute) => {
-					// Ensure correct phase. Either after registration or before
-					// end of progression.
+					// Ensure correct phase. Must be after dispute timeout and not
+					// concluded.
 					let now = Self::now();
 					match dispute.phase {
 						Phase::Register => ensure!(now >= dispute.timeout, Error::<T>::TooEarly),
-						Phase::Progress => ensure!(now < dispute.timeout, Error::<T>::TooLate),
+						Phase::Progress => {}
 						Phase::Conclude => return Err(Error::<T>::AlreadyConcluded.into()),
 					}
 
