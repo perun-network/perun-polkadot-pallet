@@ -50,7 +50,7 @@ pub type AppIdOf<T> = <T as Config>::AppId;
 pub type AppData = Vec<u8>;
 
 pub trait AppId: Encode + Decode + Member + PartialEq {}
-impl<T: Encode + Decode + Member + PartialEq + 'static> AppId for T {}
+impl<T: Encode + Decode + Member + PartialEq> AppId for T {}
 
 pub trait AppRegistry<T: pallet::Config> {
 	fn valid_transition(
