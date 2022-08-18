@@ -186,7 +186,7 @@ where
 		version: 0u32.into(),
 		balances: bals,
 		finalized: is_final,
-		data: vec![],
+		data: sp_std::vec![],
 	}
 }
 
