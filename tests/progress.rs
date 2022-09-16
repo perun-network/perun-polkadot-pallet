@@ -101,10 +101,105 @@ fn progress_invalid_signature() {
 	});
 }
 
+#[test]
+fn progress_invalid_version() {
+	run_test(MOCK_APP, |setup| {
+		deposit_both(&setup);
+		call_dispute(&setup, false);
+
+		increment_time(setup.params.challenge_duration);
+
+		let mut state = setup.state.clone();
+		state.data = MOCK_DATA_VALID.to_vec();
+		let sigs = sign_state(&state, &setup);
+
+		let signer = 0;
+		assert_noop!(
+			Perun::progress(
+				Origin::signed(setup.ids.alice),
+				setup.params.clone(),
+				state.clone(),
+				sigs[signer].clone(),
+				signer.try_into().unwrap(),
+			),
+			pallet_perun::Error::<Test>::InvalidTransition
+		);
+	});
+}
+
+#[test]
+fn progress_invalid_balances() {
+	run_test(MOCK_APP, |setup| {
+		deposit_both(&setup);
+		call_dispute(&setup, false);
+
+		increment_time(setup.params.challenge_duration);
+
+		let mut state = setup.state.clone();
+		state.version += 1;
+		state.balances[0] += 1;
+		state.data = MOCK_DATA_VALID.to_vec();
+		let sigs = sign_state(&state, &setup);
+
+		let signer = 0;
+		assert_noop!(
+			Perun::progress(
+				Origin::signed(setup.ids.alice),
+				setup.params.clone(),
+				state.clone(),
+				sigs[signer].clone(),
+				signer.try_into().unwrap(),
+			),
+			pallet_perun::Error::<Test>::InvalidTransition
+		);
+	});
+}
+
+#[test]
+fn progress_final() {
+	run_test(MOCK_APP, |setup| {
+		deposit_both(&setup);
+		call_dispute(&setup, false);
+
+		increment_time(setup.params.challenge_duration);
+
+		let mut state = setup.state.clone();
+		state.version += 1;
+		state.finalized = true;
+		state.data = MOCK_DATA_VALID.to_vec();
+		let sigs = sign_state(&state, &setup);
+
+		let signer = 0;
+		assert_ok!(Perun::progress(
+			Origin::signed(setup.ids.alice),
+			setup.params.clone(),
+			state.clone(),
+			sigs[signer].clone(),
+			signer.try_into().unwrap(),
+		));
+		assert_event_progressed(state.channel_id, state.version, setup.params.app);
+
+		state.version += 1;
+		let sigs = sign_state(&state, &setup);
+
+		let signer = 0;
+		assert_noop!(
+			Perun::progress(
+				Origin::signed(setup.ids.alice),
+				setup.params.clone(),
+				state.clone(),
+				sigs[signer].clone(),
+				signer.try_into().unwrap(),
+			),
+			pallet_perun::Error::<Test>::InvalidTransition
+		);
+	});
+}
+
 const MOCK_DATA_INVALID: [u8; 1] = [0];
 
 #[test]
-fn progress_invalid_transition() {
+fn progress_invalid_app_transition() {
 	run_test(MOCK_APP, |setup| {
 		deposit_both(&setup);
 		call_dispute(&setup, false);

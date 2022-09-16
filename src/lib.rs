@@ -44,6 +44,14 @@ use frame_system::{ensure_signed, pallet_prelude::*};
 use sp_runtime::traits::{AccountIdConversion, CheckedAdd, IdentifyAccount, Verify};
 use sp_std::{cmp, convert::TryFrom, ops::Range, vec::Vec};
 
+macro_rules! require {
+	($x:expr) => {
+		if !$x {
+			return false;
+		}
+	};
+}
+
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
@@ -82,7 +90,7 @@ pub mod pallet {
 		type Nonce: Encode + Decode + Member;
 
 		/// Type of a [State::version].
-		type Version: Encode + Decode + Member + PartialOrd;
+		type Version: Encode + Decode + Member + PartialOrd + CheckedAdd + From<u32>;
 
 		/// Cryptographically secure hashing algorithm that is used to calculate the
 		/// ChannelId and FundingId.
@@ -367,7 +375,7 @@ pub mod pallet {
 					// Require valid transition.
 					let current = dispute.state;
 					ensure!(
-						T::AppRegistry::valid_transition(&params, &current, &next, signer),
+						Self::valid_transition(&params, &current, &next, signer),
 						Error::<T>::InvalidTransition,
 					);
 
@@ -649,5 +657,41 @@ impl<T: Config> Pallet<T> {
 			Error::<T>::InvalidSignature
 		);
 		Ok(())
+	}
+
+	fn valid_transition(
+		params: &ParamsOf<T>,
+		current: &StateOf<T>,
+		next: &StateOf<T>,
+		signer: ParticipantIndex,
+	) -> bool {
+		// Check not finalized.
+		require!(!current.finalized);
+		frame_support::runtime_print!("PerunPallet:after check finalized");
+
+		// Check version incremented by one.
+		require!(next.version == current.version.clone() + 1.into());
+		frame_support::runtime_print!("PerunPallet:after check version");
+
+		// Check accumulated balance equality.
+		let cur_acc = Self::accumulate_balances(&current.balances);
+		let next_acc = Self::accumulate_balances(&next.balances);
+		frame_support::runtime_print!(
+			"PerunPallet:before check balances: {:?} ?= {:?}",
+			cur_acc,
+			next_acc
+		);
+		require!(cur_acc == next_acc);
+		frame_support::runtime_print!("PerunPallet:after check balances");
+
+		return T::AppRegistry::valid_transition(params, current, next, signer);
+	}
+
+	fn accumulate_balances(balances: &[BalanceOf<T>]) -> BalanceOf<T> {
+		let mut acc = BalanceOf::<T>::default();
+		for b in balances.iter() {
+			acc += *b;
+		}
+		return acc;
 	}
 }
