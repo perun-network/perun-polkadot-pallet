@@ -253,46 +253,6 @@ fn progress_too_early() {
 }
 
 #[test]
-fn progress_too_late() {
-	run_test(MOCK_APP, |setup| {
-		deposit_both(&setup);
-		call_dispute(&setup, false);
-
-		increment_time(setup.params.challenge_duration);
-
-		let mut state = setup.state.clone();
-		state.version += 1;
-		state.data = MOCK_DATA_VALID.to_vec();
-		let sigs = sign_state(&state, &setup);
-		let signer = 0;
-
-		assert_ok!(Perun::progress(
-			Origin::signed(setup.ids.alice),
-			setup.params.clone(),
-			state.clone(),
-			sigs[signer].clone(),
-			signer.try_into().unwrap(),
-		));
-		assert_event_progressed(state.channel_id, state.version, setup.params.app);
-
-		increment_time(setup.params.challenge_duration);
-
-		state.version += 1;
-		let sigs = sign_state(&state, &setup);
-		assert_noop!(
-			Perun::progress(
-				Origin::signed(setup.ids.alice),
-				setup.params.clone(),
-				state.clone(),
-				sigs[signer].clone(),
-				signer.try_into().unwrap(),
-			),
-			pallet_perun::Error::<Test>::TooLate
-		);
-	});
-}
-
-#[test]
 fn progress_already_concluded() {
 	run_test(MOCK_APP, |setup| {
 		deposit_both(&setup);
