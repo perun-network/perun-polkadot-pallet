@@ -29,7 +29,7 @@ fn deposit_some() {
 		assert_eq!(Balances::free_balance(setup.ids.alice), 100);
 		// Alice deposits 10.
 		assert_ok!(Perun::deposit(
-			Origin::signed(setup.ids.alice),
+			RuntimeOrigin::signed(setup.ids.alice),
 			setup.fids.alice,
 			10
 		));
@@ -49,12 +49,12 @@ fn deposit_event_absolute() {
 	run_test(MOCK_APP, |setup| {
 		// Alice deposits 10 and then 20.
 		assert_ok!(Perun::deposit(
-			Origin::signed(setup.ids.alice),
+			RuntimeOrigin::signed(setup.ids.alice),
 			setup.fids.alice,
 			10
 		));
 		assert_ok!(Perun::deposit(
-			Origin::signed(setup.ids.alice),
+			RuntimeOrigin::signed(setup.ids.alice),
 			setup.fids.alice,
 			20
 		));
@@ -79,7 +79,7 @@ fn deposit_amount_too_low() {
 		);
 		// Charlie deposits too few.
 		assert_noop!(
-			Perun::deposit(Origin::signed(setup.ids.carl), setup.fids.alice, min - 1),
+			Perun::deposit(RuntimeOrigin::signed(setup.ids.carl), setup.fids.alice, min - 1),
 			Error::<Test>::DepositTooSmall
 		);
 		// Holdings are now 0.
@@ -105,11 +105,11 @@ fn deposit_insufficient_balance() {
 		// Dora tries to deposit more than she has.
 		assert_noop!(
 			Perun::deposit(
-				Origin::signed(setup.ids.dora),
+				RuntimeOrigin::signed(setup.ids.dora),
 				setup.fids.alice,
 				PerunMinDeposit::get()
 			),
-			pallet_balances::Error::<Test>::InsufficientBalance
+			sp_runtime::TokenError::FundsUnavailable
 		);
 		// Holdings are 0.
 		assert_eq!(Perun::deposits(setup.fids.alice), None);
@@ -125,14 +125,14 @@ fn deposit_overflow() {
 	run_test(MOCK_APP, |setup| {
 		// Alice deposits 10.
 		assert_ok!(Perun::deposit(
-			Origin::signed(setup.ids.alice),
+			RuntimeOrigin::signed(setup.ids.alice),
 			setup.fids.alice,
 			10
 		));
 
 		assert_noop!(
 			Perun::deposit(
-				Origin::signed(setup.ids.alice),
+				RuntimeOrigin::signed(setup.ids.alice),
 				setup.fids.alice,
 				BalanceOf::<Test>::MAX,
 			),

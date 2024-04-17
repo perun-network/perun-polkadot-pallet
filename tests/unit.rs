@@ -41,8 +41,15 @@ fn push_outcome_invalid_parts() {
 #[cfg(feature = "expose_privates")]
 #[test]
 fn push_outcome_invalid_outcome() {
+    use pallet_perun::types::PkOf;
+
 	run_test(MOCK_APP, |setup| {
-		let parts: Vec<PkOf<Test>> = vec![Default::default(); 2];
+		let mut parts = Vec::new();
+		for _ in 0..2 {
+			let zero = vec![0; 33];
+			let pk_instance = PkOf::<Test>::from_full(&zero).expect("Failed to create PkOf instance");
+			parts.push(pk_instance);
+		}
 		let bals: Vec<BalanceOf<Test>> = vec![BalanceOf::<Test>::MAX, 1];
 
 		assert_noop!(
@@ -69,14 +76,15 @@ fn time_now() {
 fn unsigned_tx() {
 	run_test(MOCK_APP, |_| {
 		assert_noop!(
-			Perun::deposit(Origin::none(), Default::default(), Default::default()),
+			Perun::deposit(RuntimeOrigin::none(), Default::default(), Default::default()),
 			BadOrigin
 		);
 	});
+
 	run_test(MOCK_APP, |_| {
 		assert_noop!(
 			Perun::dispute(
-				Origin::none(),
+				RuntimeOrigin::none(),
 				Default::default(),
 				Default::default(),
 				Default::default()
@@ -86,14 +94,14 @@ fn unsigned_tx() {
 	});
 	run_test(MOCK_APP, |_| {
 		assert_noop!(
-			Perun::conclude(Origin::none(), Default::default(),),
+			Perun::conclude(RuntimeOrigin::none(), Default::default(),),
 			BadOrigin
 		);
 	});
 	run_test(MOCK_APP, |_| {
 		assert_noop!(
 			Perun::conclude_final(
-				Origin::none(),
+				RuntimeOrigin::none(),
 				Default::default(),
 				Default::default(),
 				Default::default()
@@ -103,7 +111,7 @@ fn unsigned_tx() {
 	});
 	run_test(MOCK_APP, |_| {
 		assert_noop!(
-			Perun::withdraw(Origin::none(), Default::default(), Default::default()),
+			Perun::withdraw(RuntimeOrigin::none(), Default::default(), Default::default()),
 			BadOrigin
 		);
 	});

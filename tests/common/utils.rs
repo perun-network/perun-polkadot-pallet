@@ -30,7 +30,7 @@ use sp_core::{crypto::*, H256};
 pub fn assert_event_deposited(funding_id: H256, amount: u64) {
 	assert_eq!(
 		last_event(),
-		Event::Perun(pallet_perun::Event::Deposited(funding_id, amount))
+		RuntimeEvent::Perun(pallet_perun::Event::Deposited(funding_id, amount))
 	);
 }
 
@@ -38,7 +38,7 @@ pub fn assert_event_deposited(funding_id: H256, amount: u64) {
 pub fn assert_event_disputed(channel_id: ChannelIdOf<Test>, state: StateOf<Test>) {
 	assert_eq!(
 		last_event(),
-		Event::Perun(pallet_perun::Event::Disputed(channel_id, state))
+		RuntimeEvent::Perun(pallet_perun::Event::Disputed(channel_id, state))
 	);
 }
 
@@ -50,7 +50,7 @@ pub fn assert_event_progressed(
 ) {
 	assert_eq!(
 		last_event(),
-		Event::Perun(pallet_perun::Event::Progressed(channel_id, version, app))
+		RuntimeEvent::Perun(pallet_perun::Event::Progressed(channel_id, version, app))
 	);
 }
 
@@ -58,7 +58,7 @@ pub fn assert_event_progressed(
 pub fn assert_event_concluded(channel_id: ChannelIdOf<Test>) {
 	assert_eq!(
 		last_event(),
-		Event::Perun(pallet_perun::Event::Concluded(channel_id))
+		RuntimeEvent::Perun(pallet_perun::Event::Concluded(channel_id))
 	);
 }
 
@@ -66,13 +66,13 @@ pub fn assert_event_concluded(channel_id: ChannelIdOf<Test>) {
 pub fn event_withdrawn(funding_id: FundingIdOf<Test>) {
 	assert_eq!(
 		last_event(),
-		Event::Perun(pallet_perun::Event::Withdrawn(funding_id))
+		RuntimeEvent::Perun(pallet_perun::Event::Withdrawn(funding_id))
 	);
 }
 
 /// Returns the last events.
 /// Panics in case that there is none.
-pub fn last_event() -> Event {
+pub fn last_event() -> RuntimeEvent {
 	System::events().pop().expect("Event list empty").event
 }
 
@@ -115,7 +115,7 @@ pub fn call_dispute(setup: &Setup, finalized: bool) -> StateOf<Test> {
 	state.finalized = finalized;
 	let sigs = sign_state(&state, &setup);
 	assert_ok!(Perun::dispute(
-		Origin::signed(setup.ids.carl),
+		RuntimeOrigin::signed(setup.ids.carl),
 		setup.params.clone(),
 		state.clone(),
 		sigs
@@ -141,12 +141,12 @@ pub fn sign_withdrawal(withdrawal: &WithdrawalOf<Test>, setup: &Setup) -> Vec<Si
 
 pub fn deposit_both(setup: &Setup) {
 	assert_ok!(Perun::deposit(
-		Origin::signed(setup.ids.alice),
+		RuntimeOrigin::signed(setup.ids.alice),
 		setup.fids.alice,
 		setup.state.balances[0]
 	));
 	assert_ok!(Perun::deposit(
-		Origin::signed(setup.ids.bob),
+		RuntimeOrigin::signed(setup.ids.bob),
 		setup.fids.bob,
 		setup.state.balances[1]
 	));

@@ -36,7 +36,7 @@ fn progress() {
 
 		let signer = 0;
 		assert_ok!(Perun::progress(
-			Origin::signed(setup.ids.alice),
+			RuntimeOrigin::signed(setup.ids.alice),
 			setup.params.clone(),
 			state.clone(),
 			sigs[signer].clone(),
@@ -62,7 +62,7 @@ fn progress_no_app() {
 		let signer = 0;
 		assert_noop!(
 			Perun::progress(
-				Origin::signed(setup.ids.alice),
+				RuntimeOrigin::signed(setup.ids.alice),
 				setup.params.clone(),
 				state.clone(),
 				sigs[signer].clone(),
@@ -90,7 +90,7 @@ fn progress_invalid_signature() {
 		let not_signer = 1;
 		assert_noop!(
 			Perun::progress(
-				Origin::signed(setup.ids.alice),
+				RuntimeOrigin::signed(setup.ids.alice),
 				setup.params.clone(),
 				state.clone(),
 				sigs[signer].clone(),
@@ -116,7 +116,7 @@ fn progress_invalid_version() {
 		let signer = 0;
 		assert_noop!(
 			Perun::progress(
-				Origin::signed(setup.ids.alice),
+				RuntimeOrigin::signed(setup.ids.alice),
 				setup.params.clone(),
 				state.clone(),
 				sigs[signer].clone(),
@@ -144,7 +144,7 @@ fn progress_invalid_balances() {
 		let signer = 0;
 		assert_noop!(
 			Perun::progress(
-				Origin::signed(setup.ids.alice),
+				RuntimeOrigin::signed(setup.ids.alice),
 				setup.params.clone(),
 				state.clone(),
 				sigs[signer].clone(),
@@ -171,7 +171,7 @@ fn progress_final() {
 
 		let signer = 0;
 		assert_ok!(Perun::progress(
-			Origin::signed(setup.ids.alice),
+			RuntimeOrigin::signed(setup.ids.alice),
 			setup.params.clone(),
 			state.clone(),
 			sigs[signer].clone(),
@@ -185,7 +185,7 @@ fn progress_final() {
 		let signer = 0;
 		assert_noop!(
 			Perun::progress(
-				Origin::signed(setup.ids.alice),
+				RuntimeOrigin::signed(setup.ids.alice),
 				setup.params.clone(),
 				state.clone(),
 				sigs[signer].clone(),
@@ -214,7 +214,7 @@ fn progress_invalid_app_transition() {
 		let signer = 0;
 		assert_noop!(
 			Perun::progress(
-				Origin::signed(setup.ids.alice),
+				RuntimeOrigin::signed(setup.ids.alice),
 				setup.params.clone(),
 				state.clone(),
 				sigs[signer].clone(),
@@ -241,7 +241,7 @@ fn progress_too_early() {
 		let signer = 0;
 		assert_noop!(
 			Perun::progress(
-				Origin::signed(setup.ids.alice),
+				RuntimeOrigin::signed(setup.ids.alice),
 				setup.params.clone(),
 				state.clone(),
 				sigs[signer].clone(),
@@ -267,7 +267,7 @@ fn progress_already_concluded() {
 		let signer = 0;
 
 		assert_ok!(Perun::progress(
-			Origin::signed(setup.ids.alice),
+			RuntimeOrigin::signed(setup.ids.alice),
 			setup.params.clone(),
 			state.clone(),
 			sigs[signer].clone(),
@@ -278,7 +278,7 @@ fn progress_already_concluded() {
 		increment_time(setup.params.challenge_duration);
 
 		assert_ok!(Perun::conclude(
-			Origin::signed(setup.ids.alice),
+			RuntimeOrigin::signed(setup.ids.alice),
 			setup.params.clone(),
 		));
 		assert_event_concluded(state.channel_id);
@@ -287,7 +287,7 @@ fn progress_already_concluded() {
 		let sigs = sign_state(&state, &setup);
 		assert_noop!(
 			Perun::progress(
-				Origin::signed(setup.ids.alice),
+				RuntimeOrigin::signed(setup.ids.alice),
 				setup.params.clone(),
 				state.clone(),
 				sigs[signer].clone(),

@@ -16,32 +16,27 @@ use pallet_balances;
 
 use super::utils::increment_time;
 
-use frame_support::{dispatch::Weight, parameter_types, PalletId};
+use frame_support::{derive_impl, parameter_types, weights::Weight, PalletId};
 use pallet_perun::types::{
 	AppIdOf, AppRegistry, BalanceOf, FundingIdOf, HasherOf, ParamsOf, ParticipantIndex, StateOf,
 };
-use sp_core::{crypto::*, H256};
+use sp_core::{crypto::*, ConstU64, H256};
 use sp_runtime::{
-	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
 	BuildStorage,
 };
 use sp_std::ops::Range;
 
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
 // For testing the pallet, we construct a mock runtime.
 frame_support::construct_runtime!(
-	pub enum Test where
-		Block = Block,
-		NodeBlock = Block,
-		UncheckedExtrinsic = UncheckedExtrinsic,
+	pub enum Test 
 	{
-		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
-		Perun: pallet_perun::{Pallet, Call, Storage, Event<T>},
+		System: frame_system,
+		Balances: pallet_balances,
+		Timestamp: pallet_timestamp,
+		Perun: pallet_perun,
 	}
 );
 
@@ -50,22 +45,22 @@ parameter_types! {
 	pub const SS58Prefix: u8 = 42;
 }
 
+#[derive_impl(frame_system::config_preludes::TestDefaultConfig as frame_system::DefaultConfig)]
 impl frame_system::Config for Test {
 	type BaseCallFilter = frame_support::traits::Everything;
 	type BlockWeights = ();
 	type BlockLength = ();
 	type DbWeight = ();
-	type Origin = Origin;
-	type Call = Call;
-	type Index = u64;
-	type BlockNumber = u64;
+	type RuntimeOrigin = RuntimeOrigin;
+	type RuntimeCall = RuntimeCall;
+	type Nonce = u64;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
 	type AccountId = u64;
 	type Lookup = IdentityLookup<Self::AccountId>;
-	type Header = Header;
-	type Event = Event;
-	type BlockHashCount = BlockHashCount;
+	type Block = Block;
+	type RuntimeEvent = RuntimeEvent;
+	type BlockHashCount = ConstU64<250>;
 	type Version = ();
 	type PalletInfo = PalletInfo;
 	type AccountData = pallet_balances::AccountData<u64>;
@@ -74,6 +69,7 @@ impl frame_system::Config for Test {
 	type SystemWeightInfo = ();
 	type SS58Prefix = SS58Prefix;
 	type OnSetCode = ();
+	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
 parameter_types! {
@@ -85,10 +81,15 @@ impl pallet_balances::Config for Test {
 	type ReserveIdentifier = [u8; 8];
 	type Balance = u64;
 	type DustRemoval = ();
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type ExistentialDeposit = ExistentialDeposit;
 	type AccountStore = frame_system::Pallet<Test>;
 	type WeightInfo = ();
+
+    type RuntimeHoldReason = (); 
+	type RuntimeFreezeReason = ();
+    type FreezeIdentifier = u64;
+    type MaxFreezes = (); 
 }
 
 parameter_types! {
@@ -110,7 +111,7 @@ parameter_types! {
 	pub const NoApp: u64 = NO_APP;
 }
 impl pallet_perun::Config for Test {
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type PalletId = PerunPalletId;
 	type MinDeposit = PerunMinDeposit;
 	type ParticipantNum = PerunParticipantNum;
@@ -173,8 +174,8 @@ impl AppRegistry<Test> for MockRegistry {
 
 	fn transition_weight(params: &ParamsOf<Test>) -> Weight {
 		match params.app {
-			MOCK_APP => return 10_000,
-			_ => return 0,
+			MOCK_APP => return Weight::from(10_000),
+			_ => return Weight::from(0),
 		}
 	}
 }
@@ -229,7 +230,7 @@ pub fn new_setup(app: AppIdOf<Test>) -> Setup {
 /// The Setup is passed to `test`.
 pub fn run_test(app: AppIdOf<Test>, test: fn(&Setup) -> ()) {
 	let setup = new_setup(app);
-	let mut ext: sp_io::TestExternalities = GenesisConfig {
+	let mut ext: sp_io::TestExternalities = RuntimeGenesisConfig {
 		// We use default for brevity, but you can configure as desired if needed.
 		system: Default::default(),
 		balances: pallet_balances::GenesisConfig::<Test> {
