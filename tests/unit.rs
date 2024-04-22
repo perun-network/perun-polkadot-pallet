@@ -47,8 +47,13 @@ fn push_outcome_invalid_outcome() {
 		let mut parts = Vec::new();
 		for _ in 0..2 {
 			let zero = vec![0; 33];
-			let pk_instance =
-				PkOf::<Test>::from_full(&zero).expect("Failed to create PkOf instance");
+			let zero_slice: [u8; 33] = {
+				// Create an array of exactly 33 elements by converting the Vec<u8> to an array
+				let mut array = [0; 33];
+				array.copy_from_slice(&zero[..33]); // Copy the first 33 elements of zero into the array
+				array
+			};
+			let pk_instance = PkOf::<Test>::from_raw(zero_slice);
 			parts.push(pk_instance);
 		}
 		let bals: Vec<BalanceOf<Test>> = vec![BalanceOf::<Test>::MAX, 1];
