@@ -143,5 +143,6 @@ jobs:
       - name: CodeCov upload
         uses: codecov/codecov-action@v4
         with:
+          token: ${{ secrets.CODECOV_TOKEN }}
           directory: "${{ env.KCOV_OUT }}/merged"
           fail_ci_if_error: true
