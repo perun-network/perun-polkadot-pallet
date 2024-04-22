@@ -8,7 +8,7 @@ keywords = ["blockchain", "channel", "perun"]
 repository = "https://github.com/perun-network/perun-polkadot-pallet"
 description = "FRAME pallet for Perun State Channels"
 readme = "README.md"
-edition.workspace = true
+edition = "2021"
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
