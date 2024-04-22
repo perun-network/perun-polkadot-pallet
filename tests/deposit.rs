@@ -79,7 +79,11 @@ fn deposit_amount_too_low() {
 		);
 		// Charlie deposits too few.
 		assert_noop!(
-			Perun::deposit(RuntimeOrigin::signed(setup.ids.carl), setup.fids.alice, min - 1),
+			Perun::deposit(
+				RuntimeOrigin::signed(setup.ids.carl),
+				setup.fids.alice,
+				min - 1
+			),
 			Error::<Test>::DepositTooSmall
 		);
 		// Holdings are now 0.

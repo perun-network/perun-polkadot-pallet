@@ -41,13 +41,14 @@ fn push_outcome_invalid_parts() {
 #[cfg(feature = "expose_privates")]
 #[test]
 fn push_outcome_invalid_outcome() {
-    use pallet_perun::types::PkOf;
+	use pallet_perun::types::PkOf;
 
 	run_test(MOCK_APP, |setup| {
 		let mut parts = Vec::new();
 		for _ in 0..2 {
 			let zero = vec![0; 33];
-			let pk_instance = PkOf::<Test>::from_full(&zero).expect("Failed to create PkOf instance");
+			let pk_instance =
+				PkOf::<Test>::from_full(&zero).expect("Failed to create PkOf instance");
 			parts.push(pk_instance);
 		}
 		let bals: Vec<BalanceOf<Test>> = vec![BalanceOf::<Test>::MAX, 1];
@@ -76,7 +77,11 @@ fn time_now() {
 fn unsigned_tx() {
 	run_test(MOCK_APP, |_| {
 		assert_noop!(
-			Perun::deposit(RuntimeOrigin::none(), Default::default(), Default::default()),
+			Perun::deposit(
+				RuntimeOrigin::none(),
+				Default::default(),
+				Default::default()
+			),
 			BadOrigin
 		);
 	});
@@ -111,7 +116,11 @@ fn unsigned_tx() {
 	});
 	run_test(MOCK_APP, |_| {
 		assert_noop!(
-			Perun::withdraw(RuntimeOrigin::none(), Default::default(), Default::default()),
+			Perun::withdraw(
+				RuntimeOrigin::none(),
+				Default::default(),
+				Default::default()
+			),
 			BadOrigin
 		);
 	});

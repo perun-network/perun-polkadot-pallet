@@ -41,7 +41,7 @@ use frame_support::{
 	PalletId,
 };
 use frame_system::{ensure_signed, pallet_prelude::*};
-use sp_runtime::traits::{ AccountIdConversion, CheckedAdd, IdentifyAccount, Verify };
+use sp_runtime::traits::{AccountIdConversion, CheckedAdd, IdentifyAccount, Verify};
 use sp_std::{cmp, convert::TryFrom, ops::Range, vec::Vec};
 
 macro_rules! require {
@@ -61,7 +61,7 @@ pub mod pallet {
 		traits::{ExistenceRequirement, Get},
 	};
 	use sp_core::ByteArray;
-use sp_runtime::traits::{CheckedAdd, Member};
+	use sp_runtime::traits::{CheckedAdd, Member};
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config + pallet_timestamp::Config {
@@ -106,7 +106,12 @@ use sp_runtime::traits::{CheckedAdd, Member};
 		/// Must be possible to verify that a [Config::PK] created a signature.
 		type Signature: Encode + Decode + Member + TypeInfo + Verify<Signer = Self::PK>;
 		/// PK of a [Config::Signature].
-		type PK: Encode + Decode + Member + ByteArray + TypeInfo + IdentifyAccount<AccountId = Self::PK>;
+		type PK: Encode
+			+ Decode
+			+ Member
+			+ ByteArray
+			+ TypeInfo
+			+ IdentifyAccount<AccountId = Self::PK>;
 
 		/// Represent a time duration in seconds.
 		type Seconds: FullCodec + Member + TypeInfo + CheckedAdd + PartialOrd + From<u64>;
@@ -243,7 +248,7 @@ use sp_runtime::traits::{CheckedAdd, Member};
 		///
 		/// Emits an [Event::Deposited] event on success.
 		#[pallet::weight(WeightInfoOf::<T>::deposit())]
-        #[pallet::call_index(0)]
+		#[pallet::call_index(0)]
 		pub fn deposit(
 			origin: OriginFor<T>,
 			funding_id: FundingIdOf<T>,

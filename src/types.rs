@@ -16,9 +16,9 @@
 
 use crate::*;
 
+use crate::pallet::Config;
 use codec::{Decode, Encode};
 use sp_core::{ByteArray, Hasher};
-use crate::pallet::Config;
 use sp_runtime::{
 	traits::{IdentifyAccount, Verify},
 	RuntimeDebug,
@@ -86,20 +86,19 @@ pub struct Params<Nonce, PK, Seconds, AppId> {
 impl<Nonce, PK, Seconds, AppId> Default for Params<Nonce, PK, Seconds, AppId>
 where
 	Nonce: Default,
-    Vec<PK>: Default, // This is crucial for initializing an empty vector of PK
-    Seconds: Default,
-    AppId: Default,
+	Vec<PK>: Default, // This is crucial for initializing an empty vector of PK
+	Seconds: Default,
+	AppId: Default,
 {
-    fn default() -> Self {
-        Self {
-            nonce: Nonce::default(),
-            participants: Vec::default(), // Initialize an empty vector of PK
-            challenge_duration: Seconds::default(),
-            app: AppId::default(),
-        }
-    }
+	fn default() -> Self {
+		Self {
+			nonce: Nonce::default(),
+			participants: Vec::default(), // Initialize an empty vector of PK
+			challenge_duration: Seconds::default(),
+			app: AppId::default(),
+		}
+	}
 }
-
 
 #[derive(Encode, Decode, Default, Clone, PartialEq, RuntimeDebug, TypeInfo)]
 #[codec(dumb_trait_bound)]
@@ -181,32 +180,31 @@ pub struct Withdrawal<ChannelId, PK, AccountId> {
 
 impl<ChannelId, PK, AccountId> Default for Withdrawal<ChannelId, PK, AccountId>
 where
-    ChannelId: Default,
+	ChannelId: Default,
 	PK: ByteArray + MaxEncodedLen,
-    AccountId: Default,
+	AccountId: Default,
 {
-    fn default() -> Self {
+	fn default() -> Self {
 		let array_len = PK::max_encoded_len();
 		// Create a zero-initialized byte array of the appropriate length
 		let zero_array = vec![0u8; array_len];
 
-        // Attempt to create a `PK` instance from the zero-initialized byte array
-        let part = match PK::from_slice(&zero_array) {
-            Ok(part) => part,
-            Err(_) => {
-                // If creation fails, handle the error (e.g., log an error message or panic)
-                panic!("Error creating PK instance from zero-initialized array");
-            }
-        };
+		// Attempt to create a `PK` instance from the zero-initialized byte array
+		let part = match PK::from_slice(&zero_array) {
+			Ok(part) => part,
+			Err(_) => {
+				// If creation fails, handle the error (e.g., log an error message or panic)
+				panic!("Error creating PK instance from zero-initialized array");
+			}
+		};
 
-        Self {
-            channel_id: ChannelId::default(),
-            part: part,
-            receiver: AccountId::default(),
-        }
-    }
+		Self {
+			channel_id: ChannelId::default(),
+			part: part,
+			receiver: AccountId::default(),
+		}
+	}
 }
-
 
 #[derive(Encode, Decode, Default, Copy, Clone, PartialEq, RuntimeDebug)]
 #[codec(dumb_trait_bound)]

@@ -147,7 +147,12 @@ fn conclude_invalid_channel_id() {
 
 		// Different nonce
 		assert_noop!(
-			Perun::conclude_final(RuntimeOrigin::signed(setup.ids.carl), params, state.clone(), sigs),
+			Perun::conclude_final(
+				RuntimeOrigin::signed(setup.ids.carl),
+				params,
+				state.clone(),
+				sigs
+			),
 			pallet_perun::Error::<Test>::InvalidChannelId
 		);
 		assert_no_events();

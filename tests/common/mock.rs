@@ -31,7 +31,7 @@ type Block = frame_system::mocking::MockBlock<Test>;
 
 // For testing the pallet, we construct a mock runtime.
 frame_support::construct_runtime!(
-	pub enum Test 
+	pub enum Test
 	{
 		System: frame_system,
 		Balances: pallet_balances,
@@ -86,10 +86,10 @@ impl pallet_balances::Config for Test {
 	type AccountStore = frame_system::Pallet<Test>;
 	type WeightInfo = ();
 
-    type RuntimeHoldReason = (); 
+	type RuntimeHoldReason = ();
 	type RuntimeFreezeReason = ();
-    type FreezeIdentifier = u64;
-    type MaxFreezes = (); 
+	type FreezeIdentifier = u64;
+	type MaxFreezes = ();
 }
 
 parameter_types! {

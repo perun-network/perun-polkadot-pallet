@@ -52,7 +52,11 @@ fn withdraw_unknown_channel() {
 		let sigs = sign_withdrawal(&withdrawal, setup);
 
 		assert_noop!(
-			Perun::withdraw(RuntimeOrigin::signed(setup.ids.alice), withdrawal, sigs[0].clone()),
+			Perun::withdraw(
+				RuntimeOrigin::signed(setup.ids.alice),
+				withdrawal,
+				sigs[0].clone()
+			),
 			pallet_perun::Error::<Test>::UnknownChannel
 		);
 	});
@@ -72,7 +76,11 @@ fn withdraw_not_concluded() {
 		let sigs = sign_withdrawal(&withdrawal, setup);
 
 		assert_noop!(
-			Perun::withdraw(RuntimeOrigin::signed(setup.ids.alice), withdrawal, sigs[0].clone()),
+			Perun::withdraw(
+				RuntimeOrigin::signed(setup.ids.alice),
+				withdrawal,
+				sigs[0].clone()
+			),
 			pallet_perun::Error::<Test>::NotConcluded
 		);
 	});
@@ -153,7 +161,11 @@ fn withdraw_ok() {
 			assert_eq!(Balances::free_balance(setup.ids.alice), 95);
 			// Withdrawing twice errors.
 			assert_noop!(
-				Perun::withdraw(RuntimeOrigin::signed(setup.ids.alice), withdrawal, sigs[0].clone()),
+				Perun::withdraw(
+					RuntimeOrigin::signed(setup.ids.alice),
+					withdrawal,
+					sigs[0].clone()
+				),
 				pallet_perun::Error::<Test>::UnknownDeposit
 			);
 		}
@@ -176,7 +188,11 @@ fn withdraw_ok() {
 			assert_eq!(Balances::free_balance(setup.ids.bob), 105);
 			// Withdrawing twice errors.
 			assert_noop!(
-				Perun::withdraw(RuntimeOrigin::signed(setup.ids.bob), withdrawal, sigs[1].clone()),
+				Perun::withdraw(
+					RuntimeOrigin::signed(setup.ids.bob),
+					withdrawal,
+					sigs[1].clone()
+				),
 				pallet_perun::Error::<Test>::UnknownDeposit
 			);
 		}
