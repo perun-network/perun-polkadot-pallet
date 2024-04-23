@@ -31,8 +31,7 @@ codec = { package = "parity-scale-codec", version = "3.6.1", default-features = 
 ] }
 scale-info = { version = "2.10.0", default-features = false, features = [
 	"derive",
-] }
-syn = "=1.0.109"  
+] } 
 
 [dev-dependencies]
 sp-core = { git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.9.0" }
