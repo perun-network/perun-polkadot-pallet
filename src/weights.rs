@@ -68,7 +68,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	}
 	//TODO: benchmark weight and replace constant
 	fn progress<U: Config>(params: &ParamsOf<U>) -> Weight {
-		return Weight::from_all(10_000).saturating_add(U::AppRegistry::transition_weight(params));
+		Weight::from_all(10_000).saturating_add(U::AppRegistry::transition_weight(params))
 	}
 	// Storage: PerunModule StateRegister (r:1 w:1)
 	// Storage: PerunModule Deposits (r:2 w:2)
@@ -83,7 +83,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	}
 	//TODO: benchmark weight and replace constant
 	fn conclude_final(_p: u32, ) -> Weight {
-		return Weight::from_all(10_000);
+		Weight::from_all(10_000)
 	}
 	// Storage: PerunModule StateRegister (r:1 w:0)
 	// Storage: PerunModule Deposits (r:1 w:1)
@@ -115,7 +115,7 @@ impl WeightInfo for () {
 	}
 	//TODO: benchmark weight and replace constant
 	fn progress<U: Config>(params: &ParamsOf<U>) -> Weight {
-		return Weight::from_all(10_000).saturating_add(U::AppRegistry::transition_weight(params));
+		Weight::from_all(10_000).saturating_add(U::AppRegistry::transition_weight(params))
 	}
 	// Storage: PerunModule StateRegister (r:1 w:1)
 	// Storage: PerunModule Deposits (r:2 w:2)
@@ -130,7 +130,7 @@ impl WeightInfo for () {
 	}
 	//TODO: benchmark weight and replace constant
 	fn conclude_final(_p: u32) -> Weight {
-		return Weight::from_all(10_000);
+		Weight::from_all(10_000)
 	}
 	// Storage: PerunModule StateRegister (r:1 w:0)
 	// Storage: PerunModule Deposits (r:1 w:1)

@@ -200,7 +200,7 @@ where
 
 		Self {
 			channel_id: ChannelId::default(),
-			part: part,
+			part,
 			receiver: AccountId::default(),
 		}
 	}
@@ -226,7 +226,7 @@ where
 
 	pub fn has_app<T: Config<AppId = AppId>>(&self) -> bool {
 		let no_app = T::NoApp::get();
-		return self.app != no_app;
+		self.app != no_app
 	}
 }
 

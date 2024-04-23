@@ -257,7 +257,7 @@ pub mod pallet {
 			let who = ensure_signed(origin)?;
 			ensure!(amount >= T::MinDeposit::get(), Error::<T>::DepositTooSmall);
 			// Check that a deposit would not overflow, return on failure.
-			let holding = <Deposits<T>>::get(&funding_id).unwrap_or_default();
+			let holding = <Deposits<T>>::get(funding_id).unwrap_or_default();
 			// An overflow here can happen if a user wants to deposit more than he has.
 			let new_holdings = holding
 				.checked_add(&amount)
@@ -266,7 +266,7 @@ pub mod pallet {
 			let account_id = Self::account_id();
 			T::Currency::transfer(&who, &account_id, amount, ExistenceRequirement::KeepAlive)?;
 			// Update the holdings in the deposits map.
-			<Deposits<T>>::insert(&funding_id, &new_holdings);
+			<Deposits<T>>::insert(funding_id, new_holdings);
 			// Emit the 'Deposited' event.
 			Self::deposit_event(Event::Deposited(funding_id, new_holdings));
 			Ok(())
@@ -299,7 +299,7 @@ pub mod pallet {
 			let channel_id = state.channel_id;
 
 			let now = Self::now();
-			match <StateRegister<T>>::get(&channel_id) {
+			match <StateRegister<T>>::get(channel_id) {
 				None => {
 					let timeout = now
 						.checked_add(&params.challenge_duration)
@@ -413,7 +413,7 @@ pub mod pallet {
 		pub fn conclude(origin: OriginFor<T>, params: ParamsOf<T>) -> DispatchResult {
 			ensure_signed(origin)?;
 			let channel_id = params.channel_id::<T::Hasher>();
-			match <StateRegister<T>>::get(&channel_id) {
+			match <StateRegister<T>>::get(channel_id) {
 				Some(dispute) => {
 					if dispute.phase == Phase::Conclude {
 						return Ok(());
@@ -470,7 +470,7 @@ pub mod pallet {
 			ensure!(state.finalized, Error::<T>::StateNotFinal);
 
 			// Check if this channel is being disputed.
-			if let Some(dispute) = <StateRegister<T>>::get(&channel_id) {
+			if let Some(dispute) = <StateRegister<T>>::get(channel_id) {
 				if dispute.phase == Phase::Conclude {
 					ensure!(
 						dispute.state.version == state.version,
@@ -587,7 +587,7 @@ impl<T: Config> Pallet<T> {
 		for (i, part) in parts.iter().enumerate() {
 			let fid = Self::calc_funding_id(channel, part);
 			fids.push(fid);
-			let deposit = <Deposits<T>>::get(&fid).unwrap_or_default();
+			let deposit = <Deposits<T>>::get(fid).unwrap_or_default();
 
 			sum_outcome = sum_outcome
 				.checked_add(&outcome[i])
@@ -607,7 +607,7 @@ impl<T: Config> Pallet<T> {
 		if sum_deposit >= sum_outcome {
 			// We redistribute the funds according to the outcome.
 			for (i, fid) in fids.iter().enumerate() {
-				<Deposits<T>>::insert(&fid, outcome[i]);
+				<Deposits<T>>::insert(fid, outcome[i]);
 			}
 		}
 		Ok(())
@@ -694,7 +694,7 @@ impl<T: Config> Pallet<T> {
 		require!(cur_acc == next_acc);
 		frame_support::runtime_print!("PerunPallet:after check balances");
 
-		return T::AppRegistry::valid_transition(params, current, next, signer);
+		T::AppRegistry::valid_transition(params, current, next, signer)
 	}
 
 	fn accumulate_balances(balances: &[BalanceOf<T>]) -> BalanceOf<T> {
@@ -702,6 +702,6 @@ impl<T: Config> Pallet<T> {
 		for b in balances.iter() {
 			acc += *b;
 		}
-		return acc;
+		acc
 	}
 }
