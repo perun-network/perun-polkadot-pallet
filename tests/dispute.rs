@@ -25,7 +25,7 @@ fn dispute_ok() {
 		let sigs = sign_state(&setup.state, &setup);
 
 		assert_ok!(Perun::dispute(
-			Origin::signed(setup.ids.carl),
+			RuntimeOrigin::signed(setup.ids.carl),
 			setup.params.clone(),
 			setup.state.clone(),
 			sigs
@@ -44,7 +44,7 @@ fn dispute_final() {
 
 		assert_noop!(
 			Perun::dispute(
-				Origin::signed(setup.ids.carl),
+				RuntimeOrigin::signed(setup.ids.carl),
 				setup.params.clone(),
 				state,
 				sigs
@@ -65,7 +65,7 @@ fn dispute_already_concluded() {
 		let sigs = sign_state(&state, &setup);
 
 		assert_ok!(Perun::conclude_final(
-			Origin::signed(setup.ids.alice),
+			RuntimeOrigin::signed(setup.ids.alice),
 			setup.params.clone(),
 			state.clone(),
 			sigs.clone()
@@ -74,7 +74,7 @@ fn dispute_already_concluded() {
 		let sigs = sign_state(&setup.state, &setup);
 		assert_noop!(
 			Perun::dispute(
-				Origin::signed(setup.ids.alice),
+				RuntimeOrigin::signed(setup.ids.alice),
 				setup.params.clone(),
 				setup.state.clone(),
 				sigs
@@ -95,7 +95,7 @@ fn dispute_challenge_duration_overflow() {
 
 		increment_time(1);
 		assert_noop!(
-			Perun::dispute(Origin::signed(setup.ids.carl), params, state, sigs),
+			Perun::dispute(RuntimeOrigin::signed(setup.ids.carl), params, state, sigs),
 			pallet_perun::Error::<Test>::ChallengeDurationOverflow
 		);
 		assert_no_events();
@@ -111,7 +111,7 @@ fn dispute_invalid_part_num() {
 		for bad_sig in bad_sigs {
 			assert_noop!(
 				Perun::dispute(
-					Origin::signed(setup.ids.carl),
+					RuntimeOrigin::signed(setup.ids.carl),
 					setup.params.clone(),
 					setup.state.clone(),
 					bad_sig
@@ -134,7 +134,7 @@ fn dispute_invalid_sig_nums() {
 		for bad_sig in bad_sigs {
 			assert_noop!(
 				Perun::dispute(
-					Origin::signed(setup.ids.carl),
+					RuntimeOrigin::signed(setup.ids.carl),
 					setup.params.clone(),
 					setup.state.clone(),
 					bad_sig
@@ -162,7 +162,7 @@ fn dispute_invalid_sig() {
 		for sig in sigs {
 			assert_noop!(
 				Perun::dispute(
-					Origin::signed(setup.ids.carl),
+					RuntimeOrigin::signed(setup.ids.carl),
 					setup.params.clone(),
 					setup.state.clone(),
 					sig,
@@ -184,7 +184,7 @@ fn dispute_invalid_channel_id() {
 		// Different nonce
 		assert_noop!(
 			Perun::dispute(
-				Origin::signed(setup.ids.carl),
+				RuntimeOrigin::signed(setup.ids.carl),
 				params,
 				setup.state.clone(),
 				sigs,
@@ -201,7 +201,7 @@ fn dispute_invalid_channel_id() {
 		// Different parts
 		assert_noop!(
 			Perun::dispute(
-				Origin::signed(setup.ids.carl),
+				RuntimeOrigin::signed(setup.ids.carl),
 				params,
 				setup.state.clone(),
 				sigs,
@@ -218,7 +218,7 @@ fn dispute_invalid_channel_id() {
 		// Different challenge duration
 		assert_noop!(
 			Perun::dispute(
-				Origin::signed(setup.ids.carl),
+				RuntimeOrigin::signed(setup.ids.carl),
 				params,
 				setup.state.clone(),
 				sigs,
@@ -235,7 +235,7 @@ fn dispute_invalid_channel_id() {
 		// Different Channel ID in State
 		assert_noop!(
 			Perun::dispute(
-				Origin::signed(setup.ids.carl),
+				RuntimeOrigin::signed(setup.ids.carl),
 				setup.params.clone(),
 				state.clone(),
 				sigs,
@@ -256,7 +256,7 @@ fn dispute_same_version() {
 		let sigs = sign_state(&setup.state, &setup);
 		assert_noop!(
 			Perun::dispute(
-				Origin::signed(setup.ids.carl),
+				RuntimeOrigin::signed(setup.ids.carl),
 				setup.params.clone(),
 				setup.state.clone(),
 				sigs
@@ -281,7 +281,7 @@ fn dispute_higher_version() {
 			let sigs = sign_state(&state, &setup);
 
 			assert_ok!(Perun::dispute(
-				Origin::signed(setup.ids.carl),
+				RuntimeOrigin::signed(setup.ids.carl),
 				setup.params.clone(),
 				state.clone(),
 				sigs
@@ -307,7 +307,7 @@ fn dispute_timeout() {
 
 			assert_noop!(
 				Perun::dispute(
-					Origin::signed(setup.ids.carl),
+					RuntimeOrigin::signed(setup.ids.carl),
 					setup.params.clone(),
 					state.clone(),
 					sigs

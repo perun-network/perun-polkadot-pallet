@@ -60,6 +60,7 @@ pub mod pallet {
 		dispatch::DispatchResult,
 		traits::{ExistenceRequirement, Get},
 	};
+	use sp_core::ByteArray;
 	use sp_runtime::traits::{CheckedAdd, Member};
 
 	#[pallet::config]
@@ -81,16 +82,16 @@ pub mod pallet {
 		type ParticipantNum: Get<Range<ParticipantIndex>>;
 
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
-		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
 		/// On-Chain currency that should be used by the Perun Pallet.
 		type Currency: Currency<Self::AccountId>;
 
 		/// Type of a [Params::nonce].
-		type Nonce: Encode + Decode + Member;
+		type Nonce: Encode + Decode + Member + TypeInfo;
 
 		/// Type of a [State::version].
-		type Version: Encode + Decode + Member + PartialOrd + CheckedAdd + From<u32>;
+		type Version: Encode + Decode + Member + TypeInfo + PartialOrd + CheckedAdd + From<u32>;
 
 		/// Cryptographically secure hashing algorithm that is used to calculate the
 		/// ChannelId and FundingId.
@@ -98,17 +99,22 @@ pub mod pallet {
 
 		/// Define the output of the Hashing algorithm.
 		/// The `FullCodec` ensures that it is usable as a `StorageMap` key.
-		type HashValue: FullCodec + Member + Copy;
+		type HashValue: FullCodec + Member + Copy + TypeInfo;
 
 		/// Off-Chain signature type.
 		///
 		/// Must be possible to verify that a [Config::PK] created a signature.
-		type Signature: Encode + Decode + Member + Verify<Signer = Self::PK>;
+		type Signature: Encode + Decode + Member + TypeInfo + Verify<Signer = Self::PK>;
 		/// PK of a [Config::Signature].
-		type PK: Encode + Decode + Member + IdentifyAccount<AccountId = Self::PK>;
+		type PK: Encode
+			+ Decode
+			+ Member
+			+ ByteArray
+			+ TypeInfo
+			+ IdentifyAccount<AccountId = Self::PK>;
 
 		/// Represent a time duration in seconds.
-		type Seconds: FullCodec + Member + CheckedAdd + PartialOrd + From<u64>;
+		type Seconds: FullCodec + Member + TypeInfo + CheckedAdd + PartialOrd + From<u64>;
 
 		/// Weight info for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
@@ -122,7 +128,7 @@ pub mod pallet {
 	}
 
 	#[pallet::pallet]
-	#[pallet::generate_store(pub(super) trait Store)]
+	#[pallet::without_storage_info]
 	pub struct Pallet<T>(_);
 
 	#[pallet::storage]
@@ -242,6 +248,7 @@ pub mod pallet {
 		///
 		/// Emits an [Event::Deposited] event on success.
 		#[pallet::weight(WeightInfoOf::<T>::deposit())]
+		#[pallet::call_index(0)]
 		pub fn deposit(
 			origin: OriginFor<T>,
 			funding_id: FundingIdOf<T>,
@@ -250,7 +257,7 @@ pub mod pallet {
 			let who = ensure_signed(origin)?;
 			ensure!(amount >= T::MinDeposit::get(), Error::<T>::DepositTooSmall);
 			// Check that a deposit would not overflow, return on failure.
-			let holding = <Deposits<T>>::get(&funding_id).unwrap_or_default();
+			let holding = <Deposits<T>>::get(funding_id).unwrap_or_default();
 			// An overflow here can happen if a user wants to deposit more than he has.
 			let new_holdings = holding
 				.checked_add(&amount)
@@ -259,7 +266,7 @@ pub mod pallet {
 			let account_id = Self::account_id();
 			T::Currency::transfer(&who, &account_id, amount, ExistenceRequirement::KeepAlive)?;
 			// Update the holdings in the deposits map.
-			<Deposits<T>>::insert(&funding_id, &new_holdings);
+			<Deposits<T>>::insert(funding_id, new_holdings);
 			// Emit the 'Deposited' event.
 			Self::deposit_event(Event::Deposited(funding_id, new_holdings));
 			Ok(())
@@ -278,6 +285,7 @@ pub mod pallet {
 		/// Emits an [Event::Disputed] event on success.
 		#[pallet::weight(WeightInfoOf::<T>::dispute(
 			cmp::min(state_sigs.len() as u32, T::ParticipantNum::get().end)))]
+		#[pallet::call_index(1)]
 		pub fn dispute(
 			origin: OriginFor<T>,
 			params: ParamsOf<T>,
@@ -291,7 +299,7 @@ pub mod pallet {
 			let channel_id = state.channel_id;
 
 			let now = Self::now();
-			match <StateRegister<T>>::get(&channel_id) {
+			match <StateRegister<T>>::get(channel_id) {
 				None => {
 					let timeout = now
 						.checked_add(&params.challenge_duration)
@@ -341,6 +349,7 @@ pub mod pallet {
 		///
 		/// Emits an [Event::Progressed] event on success.
 		#[pallet::weight(WeightInfoOf::<T>::progress::<T>(params))]
+		#[pallet::call_index(2)]
 		pub fn progress(
 			origin: OriginFor<T>,
 			params: ParamsOf<T>,
@@ -400,10 +409,11 @@ pub mod pallet {
 		///
 		/// Emits an [Event::Concluded] event on success.
 		#[pallet::weight(WeightInfoOf::<T>::conclude(params.participants.len() as u32))]
+		#[pallet::call_index(3)]
 		pub fn conclude(origin: OriginFor<T>, params: ParamsOf<T>) -> DispatchResult {
 			ensure_signed(origin)?;
 			let channel_id = params.channel_id::<T::Hasher>();
-			match <StateRegister<T>>::get(&channel_id) {
+			match <StateRegister<T>>::get(channel_id) {
 				Some(dispute) => {
 					if dispute.phase == Phase::Conclude {
 						return Ok(());
@@ -446,6 +456,7 @@ pub mod pallet {
 		///
 		/// Emits an [Event::Concluded] event on success.
 		#[pallet::weight(WeightInfoOf::<T>::conclude_final(params.participants.len() as u32))]
+		#[pallet::call_index(4)]
 		pub fn conclude_final(
 			origin: OriginFor<T>,
 			params: ParamsOf<T>,
@@ -459,7 +470,7 @@ pub mod pallet {
 			ensure!(state.finalized, Error::<T>::StateNotFinal);
 
 			// Check if this channel is being disputed.
-			if let Some(dispute) = <StateRegister<T>>::get(&channel_id) {
+			if let Some(dispute) = <StateRegister<T>>::get(channel_id) {
 				if dispute.phase == Phase::Conclude {
 					ensure!(
 						dispute.state.version == state.version,
@@ -493,6 +504,7 @@ pub mod pallet {
 		///
 		/// Emits an [Event::Withdrawn] event on success.
 		#[pallet::weight(WeightInfoOf::<T>::withdraw())]
+		#[pallet::call_index(5)]
 		pub fn withdraw(
 			origin: OriginFor<T>,
 			withdrawal: WithdrawalOf<T>,
@@ -536,7 +548,7 @@ impl<T: Config> Pallet<T> {
 	/// Returns the account of the pallet.
 	/// Cache it if it needed multiple times.
 	fn account_id() -> T::AccountId {
-		T::PalletId::get().into_account()
+		T::PalletId::get().into_account_truncating()
 	}
 
 	/// Returns the current time in seconds since
@@ -575,7 +587,7 @@ impl<T: Config> Pallet<T> {
 		for (i, part) in parts.iter().enumerate() {
 			let fid = Self::calc_funding_id(channel, part);
 			fids.push(fid);
-			let deposit = <Deposits<T>>::get(&fid).unwrap_or_default();
+			let deposit = <Deposits<T>>::get(fid).unwrap_or_default();
 
 			sum_outcome = sum_outcome
 				.checked_add(&outcome[i])
@@ -595,7 +607,7 @@ impl<T: Config> Pallet<T> {
 		if sum_deposit >= sum_outcome {
 			// We redistribute the funds according to the outcome.
 			for (i, fid) in fids.iter().enumerate() {
-				<Deposits<T>>::insert(&fid, outcome[i]);
+				<Deposits<T>>::insert(fid, outcome[i]);
 			}
 		}
 		Ok(())
@@ -682,7 +694,7 @@ impl<T: Config> Pallet<T> {
 		require!(cur_acc == next_acc);
 		frame_support::runtime_print!("PerunPallet:after check balances");
 
-		return T::AppRegistry::valid_transition(params, current, next, signer);
+		T::AppRegistry::valid_transition(params, current, next, signer)
 	}
 
 	fn accumulate_balances(balances: &[BalanceOf<T>]) -> BalanceOf<T> {
@@ -690,6 +702,6 @@ impl<T: Config> Pallet<T> {
 		for b in balances.iter() {
 			acc += *b;
 		}
-		return acc;
+		acc
 	}
 }

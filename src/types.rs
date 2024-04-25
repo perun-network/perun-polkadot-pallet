@@ -16,8 +16,9 @@
 
 use crate::*;
 
+use crate::pallet::Config;
 use codec::{Decode, Encode};
-use sp_core::Hasher;
+use sp_core::{ByteArray, Hasher};
 use sp_runtime::{
 	traits::{IdentifyAccount, Verify},
 	RuntimeDebug,
@@ -49,8 +50,8 @@ pub type FundingOf<T> = Funding<ChannelIdOf<T>, PkOf<T>>;
 pub type AppIdOf<T> = <T as Config>::AppId;
 pub type AppData = Vec<u8>;
 
-pub trait AppId: Encode + Decode + Member + PartialEq {}
-impl<T: Encode + Decode + Member + PartialEq> AppId for T {}
+pub trait AppId: Encode + Decode + TypeInfo + Member + PartialEq {}
+impl<T: Encode + Decode + TypeInfo + Member + PartialEq> AppId for T {}
 
 pub trait AppRegistry<T: pallet::Config> {
 	fn valid_transition(
@@ -63,7 +64,7 @@ pub trait AppRegistry<T: pallet::Config> {
 	fn transition_weight(params: &ParamsOf<T>) -> Weight;
 }
 
-#[derive(Encode, Decode, Default, Clone, PartialEq, RuntimeDebug)]
+#[derive(Encode, Decode, Clone, PartialEq, RuntimeDebug, TypeInfo)]
 #[codec(dumb_trait_bound)]
 /// Fixed parameters of a channel.
 ///
@@ -82,7 +83,24 @@ pub struct Params<Nonce, PK, Seconds, AppId> {
 	pub app: AppId,
 }
 
-#[derive(Encode, Decode, Default, Clone, PartialEq, RuntimeDebug)]
+impl<Nonce, PK, Seconds, AppId> Default for Params<Nonce, PK, Seconds, AppId>
+where
+	Nonce: Default,
+	Vec<PK>: Default, // This is crucial for initializing an empty vector of PK
+	Seconds: Default,
+	AppId: Default,
+{
+	fn default() -> Self {
+		Self {
+			nonce: Nonce::default(),
+			participants: Vec::default(), // Initialize an empty vector of PK
+			challenge_duration: Seconds::default(),
+			app: AppId::default(),
+		}
+	}
+}
+
+#[derive(Encode, Decode, Default, Clone, PartialEq, RuntimeDebug, TypeInfo)]
 #[codec(dumb_trait_bound)]
 /// Off-Chain state of a channel.
 pub struct State<ChannelId, Version, Balance> {
@@ -116,14 +134,14 @@ pub struct State<ChannelId, Version, Balance> {
 	pub data: AppData,
 }
 
-#[derive(Encode, Decode, Copy, Clone, PartialEq, RuntimeDebug)]
+#[derive(Encode, Decode, Copy, Clone, PartialEq, RuntimeDebug, TypeInfo)]
 pub enum Phase {
 	Register,
 	Progress,
 	Conclude,
 }
 
-#[derive(Encode, Decode, Copy, Clone, PartialEq, RuntimeDebug)]
+#[derive(Encode, Decode, Copy, Clone, PartialEq, RuntimeDebug, TypeInfo)]
 #[codec(dumb_trait_bound)]
 /// Off-chain [State] that was registered on-chain.
 ///
@@ -141,7 +159,7 @@ pub struct RegisteredState<State, Seconds> {
 	pub timeout: Seconds,
 }
 
-#[derive(Encode, Decode, Default, Copy, Clone, PartialEq, RuntimeDebug)]
+#[derive(Encode, Decode, Copy, Clone, PartialEq, RuntimeDebug, TypeInfo)]
 #[codec(dumb_trait_bound)]
 /// Withdrawal authorization for on-chain funds.
 ///
@@ -158,6 +176,34 @@ pub struct Withdrawal<ChannelId, PK, AccountId> {
 
 	/// On-Chain Account to credited.
 	pub receiver: AccountId,
+}
+
+impl<ChannelId, PK, AccountId> Default for Withdrawal<ChannelId, PK, AccountId>
+where
+	ChannelId: Default,
+	PK: ByteArray + MaxEncodedLen,
+	AccountId: Default,
+{
+	fn default() -> Self {
+		let array_len = PK::max_encoded_len();
+		// Create a zero-initialized byte array of the appropriate length
+		let zero_array = vec![0u8; array_len];
+
+		// Attempt to create a `PK` instance from the zero-initialized byte array
+		let part = match PK::from_slice(&zero_array) {
+			Ok(part) => part,
+			Err(_) => {
+				// If creation fails, handle the error (e.g., log an error message or panic)
+				panic!("Error creating PK instance from zero-initialized array");
+			}
+		};
+
+		Self {
+			channel_id: ChannelId::default(),
+			part,
+			receiver: AccountId::default(),
+		}
+	}
 }
 
 #[derive(Encode, Decode, Default, Copy, Clone, PartialEq, RuntimeDebug)]
@@ -180,7 +226,7 @@ where
 
 	pub fn has_app<T: Config<AppId = AppId>>(&self) -> bool {
 		let no_app = T::NoApp::get();
-		return self.app != no_app;
+		self.app != no_app
 	}
 }
 

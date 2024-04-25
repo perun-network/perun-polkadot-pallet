@@ -53,45 +53,45 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: PerunModule Deposits (r:1 w:1)
 	// Storage: System Account (r:1 w:1)
 	fn deposit() -> Weight {
-		(110_609_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(2 as Weight))
-			.saturating_add(T::DbWeight::get().writes(2 as Weight))
+		(Weight::from_all(110_609_000))
+			.saturating_add(T::DbWeight::get().reads(2))
+			.saturating_add(T::DbWeight::get().writes(2))
 	}
 	// Storage: Timestamp Now (r:1 w:0)
 	// Storage: PerunModule StateRegister (r:1 w:1)
 	fn dispute(p: u32, ) -> Weight {
-		(1_396_000 as Weight)
+		(Weight::from_all(1_396_000))
 			// Standard Error: 25_000
-			.saturating_add((87_897_000 as Weight).saturating_mul(p as Weight))
-			.saturating_add(T::DbWeight::get().reads(2 as Weight))
-			.saturating_add(T::DbWeight::get().writes(1 as Weight))
+			.saturating_add((Weight::from_all(87_897_000)).saturating_mul(p.into()))
+			.saturating_add(T::DbWeight::get().reads(2))
+			.saturating_add(T::DbWeight::get().writes(1))
 	}
 	//TODO: benchmark weight and replace constant
 	fn progress<U: Config>(params: &ParamsOf<U>) -> Weight {
-		return 10_000 + U::AppRegistry::transition_weight(params);
+		Weight::from_all(10_000).saturating_add(U::AppRegistry::transition_weight(params))
 	}
 	// Storage: PerunModule StateRegister (r:1 w:1)
 	// Storage: PerunModule Deposits (r:2 w:2)
 	fn conclude(p: u32, ) -> Weight {
-		(17_600_000 as Weight)
+		(Weight::from_all(17_600_000))
 			// Standard Error: 426_000
-			.saturating_add((97_182_000 as Weight).saturating_mul(p as Weight))
-			.saturating_add(T::DbWeight::get().reads(1 as Weight))
-			.saturating_add(T::DbWeight::get().reads((1 as Weight).saturating_mul(p as Weight)))
-			.saturating_add(T::DbWeight::get().writes(1 as Weight))
-			.saturating_add(T::DbWeight::get().writes((1 as Weight).saturating_mul(p as Weight)))
+			.saturating_add((Weight::from_all(97_182_000)).saturating_mul(p.into()))
+			.saturating_add(T::DbWeight::get().reads(1))
+			.saturating_add(T::DbWeight::get().reads((1_u64).saturating_mul(p.into())))
+			.saturating_add(T::DbWeight::get().writes(1))
+			.saturating_add(T::DbWeight::get().writes((1_u64).saturating_mul(p.into())))
 	}
 	//TODO: benchmark weight and replace constant
 	fn conclude_final(_p: u32, ) -> Weight {
-		return 10_000;
+		Weight::from_all(10_000)
 	}
 	// Storage: PerunModule StateRegister (r:1 w:0)
 	// Storage: PerunModule Deposits (r:1 w:1)
 	// Storage: System Account (r:1 w:1)
 	fn withdraw() -> Weight {
-		(151_546_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(3 as Weight))
-			.saturating_add(T::DbWeight::get().writes(2 as Weight))
+		(Weight::from_all(151_546_000))
+			.saturating_add(T::DbWeight::get().reads(3))
+			.saturating_add(T::DbWeight::get().writes(2))
 	}
 }
 
@@ -100,44 +100,44 @@ impl WeightInfo for () {
 	// Storage: PerunModule Deposits (r:1 w:1)
 	// Storage: System Account (r:1 w:1)
 	fn deposit() -> Weight {
-		(110_609_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(2 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(2 as Weight))
+		(Weight::from_all(110_609_000))
+			.saturating_add(RocksDbWeight::get().reads(2))
+			.saturating_add(RocksDbWeight::get().writes(2))
 	}
 	// Storage: Timestamp Now (r:1 w:0)
 	// Storage: PerunModule StateRegister (r:1 w:1)
 	fn dispute(p: u32, ) -> Weight {
-		(1_396_000 as Weight)
+		(Weight::from_all(1_396_000))
 			// Standard Error: 25_000
-			.saturating_add((87_897_000 as Weight).saturating_mul(p as Weight))
-			.saturating_add(RocksDbWeight::get().reads(2 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
+			.saturating_add((Weight::from_all(87_897_000)).saturating_mul(p.into()))
+			.saturating_add(RocksDbWeight::get().reads(2))
+			.saturating_add(RocksDbWeight::get().writes(1))
 	}
 	//TODO: benchmark weight and replace constant
 	fn progress<U: Config>(params: &ParamsOf<U>) -> Weight {
-		return 10_000 + U::AppRegistry::transition_weight(params);
+		Weight::from_all(10_000).saturating_add(U::AppRegistry::transition_weight(params))
 	}
 	// Storage: PerunModule StateRegister (r:1 w:1)
 	// Storage: PerunModule Deposits (r:2 w:2)
 	fn conclude(p: u32, ) -> Weight {
-		(17_600_000 as Weight)
+		(Weight::from_all(17_600_000))
 			// Standard Error: 426_000
-			.saturating_add((97_182_000 as Weight).saturating_mul(p as Weight))
-			.saturating_add(RocksDbWeight::get().reads(1 as Weight))
-			.saturating_add(RocksDbWeight::get().reads((1 as Weight).saturating_mul(p as Weight)))
-			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
-			.saturating_add(RocksDbWeight::get().writes((1 as Weight).saturating_mul(p as Weight)))
+			.saturating_add((Weight::from_all(97_182_000)).saturating_mul(p.into()))
+			.saturating_add(RocksDbWeight::get().reads(1))
+			.saturating_add(RocksDbWeight::get().reads((1_u64).saturating_mul(p.into())))
+			.saturating_add(RocksDbWeight::get().writes(1))
+			.saturating_add(RocksDbWeight::get().writes((1_u64).saturating_mul(p.into())))
 	}
 	//TODO: benchmark weight and replace constant
 	fn conclude_final(_p: u32) -> Weight {
-		return 10_000;
+		Weight::from_all(10_000)
 	}
 	// Storage: PerunModule StateRegister (r:1 w:0)
 	// Storage: PerunModule Deposits (r:1 w:1)
 	// Storage: System Account (r:1 w:1)
 	fn withdraw() -> Weight {
-		(151_546_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(3 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(2 as Weight))
+		(Weight::from_all(151_546_000))
+			.saturating_add(RocksDbWeight::get().reads(3))
+			.saturating_add(RocksDbWeight::get().writes(2))
 	}
 }

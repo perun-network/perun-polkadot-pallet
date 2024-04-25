@@ -17,14 +17,14 @@ jobs:
       KCOV_OUT: "target/cov/pallet_perun"
       KCOV: "~/cache/usr/local/bin/kcov"
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 2  # CodeCov needs this
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly
 
-      - uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v2
         name: Setup Cache
 
       - uses: actions-rs/cargo@v1
@@ -64,7 +64,7 @@ jobs:
           args: --all-targets --all-features
 
       - name: kcov cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: ~/cache
           key: ${{ runner.os }}-kcov-wget
@@ -141,7 +141,8 @@ jobs:
           $KCOV --merge "$KCOV_OUT/merged" "$KCOV_OUT"/unmerged-*
 
       - name: CodeCov upload
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v4
         with:
+          token: ${{ secrets.CODECOV_TOKEN }}
           directory: "${{ env.KCOV_OUT }}/merged"
           fail_ci_if_error: true
